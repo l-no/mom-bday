@@ -1,5 +1,7 @@
 from secrets import SystemRandom
 from enum import Enum
+from dataclasses import dataclass
+import sys
 
 
 class Card:
@@ -40,23 +42,321 @@ class Config:
 class Ansi:
     def code(color):
         match color:
-            case PhotoCard.Color.Green:
+            case PhotoCard.Color.Green | EngineCard.Arrow.Color.Green:
                 return '\x1b[38;5;46m'
-            case PhotoCard.Color.Blue:
+            case PhotoCard.Color.Blue | EngineCard.Arrow.Color.Blue:
                 return '\x1b[38;5;21m'
-            case PhotoCard.Color.Red:
+            case PhotoCard.Color.Red | EngineCard.Arrow.Color.Red:
                 return '\x1b[38;5;198m'
-            case PhotoCard.Color.Yellow:
+            case PhotoCard.Color.Yellow | EngineCard.Arrow.Color.Yellow:
                 return '\x1b[38;5;226m'
-            case PhotoCard.Color.Purple:
+            case PhotoCard.Color.Purple | EngineCard.Arrow.Color.Purple:
                 return '\x1b[38;5;200m'
-            case PhotoCard.Color.Orange:
+            case PhotoCard.Color.Orange | EngineCard.Arrow.Color.Orange:
                 return '\x1b[38;5;208m'
             case _:
                 assert False, "unreachable"
-        
     def reset():
         return '\x1b[0m'
+
+
+    def cursor_up(count):
+        sys.stdout.write(f'\x1b[{count}A')
+        sys.stdout.flush()
+    def cursor_down(count):
+        sys.stdout.write(f'\x1b[{count}B')
+        sys.stdout.flush()
+    def cursor_right(count):
+        sys.stdout.write(f'\x1b[{count}C')
+        sys.stdout.flush()
+    def cursor_left(count):
+        sys.stdout.write(f'\x1b[{count}D')
+        sys.stdout.flush()
+    def clear_screen():
+        sys.stdout.write(f'\x1b[2J')
+        sys.stdout.flush()
+    def cursor_to_topleft():
+        sys.stdout.write(f'\x1b[H')
+        sys.stdout.flush()
+    def save_cursor():
+        sys.stdout.write(f'\x1b[s')
+        sys.stdout.flush()
+    def restore_cursor():
+        sys.stdout.write(f'\x1b[u')
+        sys.stdout.flush()
+
+    # google ai
+    def get_visible_length(s):
+        import re
+        """
+        Calculates the length of a string ignoring ANSI escape codes.
+
+        Args:
+            s (str): The input string potentially containing ANSI codes.
+
+        Returns:
+            int: The length of the string without the escape codes.
+        """
+        # Regex pattern to match typical ANSI color codes (SGR sequences)
+        ansi_pattern = re.compile(r'\x1b\[[0-9;]*m')
+        # Substitute all matches with an empty string
+        clean_string = ansi_pattern.sub('', s)
+        # Return the length of the resulting clean string
+        return len(clean_string)
+        
+class EngineCard(Card):
+    class Power(Enum):
+        FlipAny   = '!'
+        FlipCross = '+'
+
+    @dataclass
+    class Arrow:
+        # can't use real type here because EngineCard won't exist when decorator decorates
+        direction: None
+        color: None
+
+        class Direction(Enum):
+            Toward = 'toward'
+            Away   = 'away'
+        class Color(Enum):
+            Green = 'green'
+            Blue = 'blue'
+            Red = 'red'
+            Yellow = 'yellow'
+            Purple = 'purple'
+            Orange = 'orange'
+
+        def __repr__(self):
+            return f'{Ansi.code(self.color)}{self.direction.name}{Ansi.reset()}'
+
+    def __repr__(self):
+        return f'[{self.power} (^ {self.arrow_up}) (v {self.arrow_down}) (< {self.arrow_left}) (> {self.arrow_right})]'
+
+    # comma separated list of
+    #   <direction> <t(oward)|a(way)> <color>
+    # e.g.,
+    #   >iblue,<ored,...
+    def deser(s):
+        r = EngineCard(None, None, None, None, None)
+        for opt in s.split(","):
+            if opt[0] in '<>^v':
+                inout = opt[1]
+                if inout not in 'ta':
+                    raise ValueError(f"Expected a/t (Away/Towards), got {inout}")
+                direction = EngineCard.Arrow.Direction.Toward if inout == 't' else EngineCard.Arrow.Direction.Away
+                color = EngineCard.Arrow.Color(opt[2:].lower())
+                arrow = EngineCard.Arrow(direction=direction, color=color)
+                if opt[0] == '>':
+                    if r.arrow_right is not None:
+                        raise ValueError("repeated")
+                    r.arrow_right = arrow
+                elif opt[0] == '<':
+                    if r.arrow_left is not None:
+                        raise ValueError("repeated")
+                    r.arrow_left = arrow
+                elif opt[0] == '^':
+                    if r.arrow_up is not None:
+                        raise ValueError("repeated")
+                    r.arrow_up = arrow
+                elif opt[0] == 'v':
+                    if r.arrow_down is not None:
+                        raise ValueError("repeated")
+                    r.arrow_down = arrow
+                else:
+                    assert False
+            else:
+                try:
+                    r.power = EngineCard.Power(opt)
+                except Exception as e:
+                    raise ValueError(f"Deser error: {e}")
+        assert r.arrow_left
+        assert r.arrow_right
+        assert r.arrow_up
+        assert r.arrow_down
+        assert r.power
+        return r
+
+    def ansi_print(self):
+        s = '''
+           +------------+
+           |     |      |
+           |     v      |
+           |            |
+           | <-  +  ->  |
+           |            |
+           |     |      |
+           |     v      |
+           +------------+
+        '''
+        s = '\n'.join(l.strip() for l in s.strip().split("\n"))
+        Ansi.save_cursor()
+        sys.stdout.write(s)
+        Ansi.restore_cursor()
+        Ansi.cursor_right(6)
+        Ansi.cursor_down(1)
+
+        sys.stdout.write(Ansi.code(self.arrow_up.color))
+        if self.arrow_up.direction == EngineCard.Arrow.Direction.Toward:
+            sys.stdout.write("|")
+            Ansi.cursor_down(1)
+            Ansi.cursor_left(1)
+            sys.stdout.write("V")
+        else:
+            sys.stdout.write("^")
+            Ansi.cursor_down(1)
+            Ansi.cursor_left(1)
+            sys.stdout.write("|")
+        sys.stdout.write(Ansi.reset())
+
+        Ansi.cursor_left(1)
+        Ansi.cursor_down(4)
+
+        sys.stdout.write(Ansi.code(self.arrow_down.color))
+        if self.arrow_down.direction == EngineCard.Arrow.Direction.Toward:
+            sys.stdout.write("^")
+            Ansi.cursor_down(1)
+            Ansi.cursor_left(1)
+            sys.stdout.write("|")
+        else:
+            sys.stdout.write("|")
+            Ansi.cursor_down(1)
+            Ansi.cursor_left(1)
+            sys.stdout.write("v")
+        sys.stdout.write(Ansi.reset())
+
+        Ansi.cursor_right(2)
+        Ansi.cursor_up(3)
+
+        sys.stdout.write(Ansi.code(self.arrow_right.color))
+        if self.arrow_right.direction == EngineCard.Arrow.Direction.Toward:
+            sys.stdout.write("<")
+            sys.stdout.write("-")
+        else:
+            sys.stdout.write("-")
+            sys.stdout.write(">")
+        sys.stdout.write(Ansi.reset())
+
+        Ansi.cursor_left(9)
+
+        sys.stdout.write(Ansi.code(self.arrow_left.color))
+        if self.arrow_left.direction == EngineCard.Arrow.Direction.Toward:
+            sys.stdout.write("-")
+            sys.stdout.write(">")
+        else:
+            sys.stdout.write("<")
+            sys.stdout.write("-")
+        sys.stdout.write(Ansi.reset())
+
+        Ansi.restore_cursor()
+
+
+    def print_all(self, recursed=False):
+
+        self.ansi_print()
+        cur = self.card_right
+        count = 0
+        while cur:
+            count += 1
+            Ansi.cursor_right(15)
+            cur.ansi_print()
+            cur = cur.card_right
+        while count:
+            Ansi.cursor_left(15)
+            count -= 1
+
+    def set_left(self, other):
+        self.card_left = other
+        other.card_right = self
+    def set_right(self, other):
+        self.card_right= other
+        other.card_left = self
+    def set_up(self, other):
+        self.card_up = other
+        other.card_down= self
+    def set_down(self, other):
+        self.card_down= other
+        other.card_up= self
+
+
+    def build_engine_graph(node):
+        g = {}
+
+        col = 0
+        row = 0
+
+        def add(n, col, row):
+            #print(col, row, g)
+            if row not in g:
+                g[row] = {}
+
+            if col in g[row]:
+                if g[row][col] is not n:
+                    raise ValueError("invalid graph")
+            else:
+                g[row][col] = n
+
+                if n.card_right:
+                    add(n.card_right, col+1, row)
+                if n.card_left:
+                    add(n.card_left, col-1, row)
+                if n.card_up:
+                    add(n.card_up, col, row-1)
+                if n.card_down:
+                    add(n.card_down, col, row+1)
+
+        add(node,0,0)
+
+        minrow = min(g.keys())
+        rowoffset = -minrow if minrow < 0 else 0
+
+        mincol = min(min(x.keys()) for _,x in g.items())
+        coloffset = -mincol if mincol < 0 else 0
+
+        real = {row+rowoffset : {col+coloffset : g[row][col] for col in g[row].keys()} for row in g.keys()}
+        return real
+
+
+
+
+    def test_print_graph(node):
+        g = node.build_engine_graph()
+        assert min(g.keys()) >= 0
+        maxrow = max(g.keys())
+
+        assert min(min(x.keys()) for _,x in g.items()) >= 0
+        maxcol = max(max(x.keys()) for _,x in g.items())
+
+        width = 60
+        # be careful of unprintable
+        for row in range(0, maxrow+1):
+            for col in range(0, maxcol+1):
+                if row in g and col in g[row]:
+                    s = str(g[row][col])
+                    l = Ansi.get_visible_length(s)
+                    assert width > l
+                    s += ' '*(width-l)
+                    print(s, end='')
+                else:
+                    s = ' '*width
+                    print(s, end='')
+            print("")
+                 
+
+
+    def __init__(self, power, arrow_left, arrow_right, arrow_up, arrow_down):
+        Card.__init__(self, kind=Card.Kind.Engine)
+        self.power = power
+
+        self.arrow_left = arrow_left
+        self.arrow_right = arrow_right  
+        self.arrow_up = arrow_up
+        self.arrow_down = arrow_down
+
+        self.card_left = None
+        self.card_right = None
+        self.card_up = None
+        self.card_down  = None
+
 
 
 class PhotoCard(Card):
@@ -209,7 +509,7 @@ class ColorGrid:
                 print(f"{rowidx:{max_num_size}}{' ' * spacing}", end="")
                 rowidx += 1
             
-            end = "\n" if ((i+1) % self.cols) == 0 else ' '
+            end = f"{' '*spacing}{rowidx-1}\n" if ((i+1) % self.cols) == 0 else ' '
             if c is None:
                 print(f'.', end=end)
             else:
@@ -229,6 +529,7 @@ class ColorGrid:
 def _test():
     #d = Deck([PhotoCard(SystemRandom().choice([c for c in PhotoCard.Color])) for _ in range(10)])
 
+    '''
     d = PhotoCard.default_deck()
     grid = ColorGrid(d, True)
     grid.flip_up(0,0)
@@ -248,6 +549,29 @@ def _test():
     #d.shuffle()
     #print(d.draw().uid)
     #print([c for c in d])
+    '''
+    e = EngineCard.deser("<ablue,>ablue,^tblue,vtblue,!")
+    e2 = EngineCard.deser("<agreen,>agreen,^tgreen,vtgreen,!")
+    e3 = EngineCard.deser("<ared,>ared,^tred,vtred,!")
+    e4 = EngineCard.deser("<ayellow,>ayellow,^tyellow,vtyellow,!")
+    e5 = EngineCard.deser("<apurple,>apurple,^tpurple,vtpurple,!")
+    #print(e.left, e.right, e.up, e.down)
+    e.set_down(e2)
+    e2.set_left(e3)
+    e3.set_left(e4)
+    e4.set_up(e5)
+    #e5.set_right(e)
+
+    #e.print_all()
+    #Ansi.clear_screen()
+    #Ansi.cursor_to_topleft()
+    #e.print_all()
+    #e.ansi_print()
+    #Ansi.cursor_right(20)
+    #e2.ansi_print()
+    #g = e.build_engine_graph() 
+    #print(g)
+    e.test_print_graph()
 
 
 
