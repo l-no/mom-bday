@@ -6,6 +6,7 @@ import sys
 
 class Card:
     uid_counter = 0
+    _cards = []
 
     class Kind(Enum):
         Engine = 'engine'
@@ -22,6 +23,10 @@ class Card:
 
         self.face_up = False
 
+        assert len(Card._cards) == self.uid
+        Card._cards.append(self)
+        assert Card._cards[self.uid] == self
+
     def flip_up(self, strict=True):
         if strict and self.face_up:
             raise ValueError("Already face up.")
@@ -31,6 +36,11 @@ class Card:
         if strict and not self.face_up:
             raise ValueError("Already face down.")
         self.face_up = False
+
+
+    @staticmethod
+    def find_by_uid(uid):
+        return self._cards[uid]
 
 class Config:
     photo_cards_of_each_color = 6
@@ -42,17 +52,17 @@ class Config:
 class Ansi:
     def code(color):
         match color:
-            case PhotoCard.Color.Green | EngineCard.Arrow.Color.Green:
+            case Color.Green | Color.Green:
                 return '\x1b[38;5;46m'
-            case PhotoCard.Color.Blue | EngineCard.Arrow.Color.Blue:
+            case Color.Blue | Color.Blue:
                 return '\x1b[38;5;21m'
-            case PhotoCard.Color.Red | EngineCard.Arrow.Color.Red:
+            case Color.Red | Color.Red:
                 return '\x1b[38;5;198m'
-            case PhotoCard.Color.Yellow | EngineCard.Arrow.Color.Yellow:
+            case Color.Yellow | Color.Yellow:
                 return '\x1b[38;5;226m'
-            case PhotoCard.Color.Purple | EngineCard.Arrow.Color.Purple:
+            case Color.Purple | Color.Purple:
                 return '\x1b[38;5;200m'
-            case PhotoCard.Color.Orange | EngineCard.Arrow.Color.Orange:
+            case Color.Orange | Color.Orange:
                 return '\x1b[38;5;208m'
             case _:
                 assert False, "unreachable"
@@ -118,13 +128,6 @@ class EngineCard(Card):
         class Direction(Enum):
             Toward = 'toward'
             Away   = 'away'
-        class Color(Enum):
-            Green = 'green'
-            Blue = 'blue'
-            Red = 'red'
-            Yellow = 'yellow'
-            Purple = 'purple'
-            Orange = 'orange'
 
         def __repr__(self):
             return f'{Ansi.code(self.color)}{self.direction.name}{Ansi.reset()}'
@@ -144,7 +147,7 @@ class EngineCard(Card):
                 if inout not in 'ta':
                     raise ValueError(f"Expected a/t (Away/Towards), got {inout}")
                 direction = EngineCard.Arrow.Direction.Toward if inout == 't' else EngineCard.Arrow.Direction.Away
-                color = EngineCard.Arrow.Color(opt[2:].lower())
+                color = Color(opt[2:].lower())
                 arrow = EngineCard.Arrow(direction=direction, color=color)
                 if opt[0] == '>':
                     if r.arrow_right is not None:
@@ -175,6 +178,12 @@ class EngineCard(Card):
         assert r.arrow_down
         assert r.power
         return r
+
+    def activate(self):
+        print("Activate")
+        print(self)
+        #self.ansi_print()
+        #print("")
 
     def ansi_print(self):
         s = '''
@@ -316,6 +325,46 @@ class EngineCard(Card):
         return real
 
 
+    def follow_engine(node, color, already=[]):
+        if node not in already:
+            already.append(node)
+        else:
+            return
+        node.activate()
+
+        if (node.card_right and
+            node.arrow_right.direction == EngineCard.Arrow.Direction.Away and
+            node.card_right.arrow_left.direction == EngineCard.Arrow.Direction.Toward and
+            color == node.card_right.arrow_left.color and
+            color == node.arrow_right.color
+        ):
+            node.card_right.follow_engine(color)
+
+        if (node.card_left and
+            node.arrow_left.direction == EngineCard.Arrow.Direction.Away and
+            node.card_left.arrow_right.direction == EngineCard.Arrow.Direction.Toward and
+            color == node.card_left.arrow_right.color and
+            color == node.arrow_left.color
+        ):
+            node.card_left.follow_engine(color)
+
+        if (node.card_up and
+            node.arrow_up.direction == EngineCard.Arrow.Direction.Away and
+            node.card_up.arrow_down.direction == EngineCard.Arrow.Direction.Toward and
+            color == node.card_up.arrow_down.color and
+            color == node.arrow_up.color
+        ):
+            node.card_up.follow_engine(color)
+
+
+        if (node.card_down and
+            node.arrow_down.direction == EngineCard.Arrow.Direction.Away and
+            node.card_down.arrow_up.direction == EngineCard.Arrow.Direction.Toward and
+            color == node.card_down.arrow_up.color and
+            color == node.arrow_down.color
+        ):
+            node.card_down.follow_engine(color)
+
 
 
     def test_print_graph(node):
@@ -343,6 +392,7 @@ class EngineCard(Card):
                  
 
 
+
     def __init__(self, power, arrow_left, arrow_right, arrow_up, arrow_down):
         Card.__init__(self, kind=Card.Kind.Engine)
         self.power = power
@@ -359,15 +409,17 @@ class EngineCard(Card):
 
 
 
-class PhotoCard(Card):
-    class Color(Enum):
-        Green = 'green'
-        Blue = 'blue'
-        Red = 'red'
-        Yellow = 'yellow'
-        Purple = 'purple'
-        Orange = 'orange'
 
+class Color(Enum):
+    Green = 'green'
+    Blue = 'blue'
+    Red = 'red'
+    Yellow = 'yellow'
+    Purple = 'purple'
+    Orange = 'orange'
+
+
+class PhotoCard(Card):
 
     def __repr__(self):
         return f'{str(self.color.name)}_{self.uid}'
@@ -378,14 +430,14 @@ class PhotoCard(Card):
     def default_deck():
         return Deck(cards=[
             PhotoCard(color)
-            for color in PhotoCard.Color
+            for color in Color
             for _ in range(Config.photo_cards_of_each_color)
         ])
 
     def __init__(self, color):
         Card.__init__(self, kind=Card.Kind.Photo)
-        if not isinstance(color, PhotoCard.Color):
-            raise ValueError(f"Expected PhotoCard.Color, got {type(kind)}")
+        if not isinstance(color, Color):
+            raise ValueError(f"Expected Color, got {type(kind)}")
         self.color = color
 
 
@@ -525,9 +577,42 @@ class ColorGrid:
             print(f'{alpha[i]}', end="\n" if ((i+1) % self.cols) == 0 else ' ')
         print("")
 
+class Player:
+    def __init__(self):
+        pass
+
+    def add_to_engine(self, card, uid, direction):
+        o = Card.find_by_uid(uid)
+        if o.owner != self:
+            raise ValueError("wrong player owns card")
+
+        card.owner = self
+        if direction == "right":
+            if o.card_right is not None:
+                raise ValueError("Already filled")
+            o.set_right(card)
+        elif direction == "left":
+            if o.card_left is not None:
+                raise ValueError("Already filled")
+            o.set_left(card)
+        elif direction == "up":
+            if o.card_up is not None:
+                raise ValueError("Already filled")
+            o.set_up(card)
+        elif direction == "down":
+            if o.card_down is not None:
+                raise ValueError("Already filled")
+            o.set_down(card)
+
+
+    
+
+
+
+
 
 def _test():
-    #d = Deck([PhotoCard(SystemRandom().choice([c for c in PhotoCard.Color])) for _ in range(10)])
+    #d = Deck([PhotoCard(SystemRandom().choice([c for c in Color])) for _ in range(10)])
 
     '''
     d = PhotoCard.default_deck()
@@ -550,11 +635,11 @@ def _test():
     #print(d.draw().uid)
     #print([c for c in d])
     '''
-    e = EngineCard.deser("<ablue,>ablue,^tblue,vtblue,!")
-    e2 = EngineCard.deser("<agreen,>agreen,^tgreen,vtgreen,!")
-    e3 = EngineCard.deser("<ared,>ared,^tred,vtred,!")
-    e4 = EngineCard.deser("<ayellow,>ayellow,^tyellow,vtyellow,!")
-    e5 = EngineCard.deser("<apurple,>apurple,^tpurple,vtpurple,!")
+    e = EngineCard.deser("<ablue,>ablue,^tblue,vablue,!")
+    e2 = EngineCard.deser("<ablue,>agreen,^tblue,vtgreen,!")
+    e3 = EngineCard.deser("<ablue,>tblue,^tred,vtred,!")
+    e4 = EngineCard.deser("<ayellow,>tblue,^ablue,vtyellow,!")
+    e5 = EngineCard.deser("<apurple,>ablue,^tpurple,vablue,!")
     #print(e.left, e.right, e.up, e.down)
     e.set_down(e2)
     e2.set_left(e3)
@@ -572,6 +657,7 @@ def _test():
     #g = e.build_engine_graph() 
     #print(g)
     e.test_print_graph()
+    e.follow_engine(Color.Blue)
 
 
 

@@ -1,0 +1,73 @@
+
+body {
+    color: white;
+    background-color: black;
+    display: flex;
+}
+
+
+.photo-card { 
+    width: 20px;
+    height: 40px;
+    padding: 4px;
+    margin: 10px;
+
+    border: white;
+    border-style: solid;
+    border-radius: 6px;
+}
+
+.photo-card[face-up=false] {
+    background-color: darkgray;
+}
+
+.color-green { background-color: green; }
+.color-red { background-color: red; }
+.color-yellow { background-color: yellow; }
+.color-blue { background-color: blue; }
+.color-orange { background-color: orange; }
+.color-purple { background-color: purple; }
+
+#color-grid {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+
+    display: grid;
+    grid-template-columns: repeat(6, 100px);
+
+}
+
+.engine-card {
+    border: black;
+    border-style: solid;
+    border-radius: 6px;
+    width: fit-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.top-arrow { background-color: lightblue; }
+.bot-arrow { background-color: lightgreen; }
+.left-arrow { background-color: red; }
+
+#player-areas {
+    display:flex;
+    flex-direction: column;
+
+    margin: 4px;
+    padding: 4px;
+}
+
+.player-area {
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+
+    margin: 4px;
+    padding: 4px;
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+}
+
