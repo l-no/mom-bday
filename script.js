@@ -6,12 +6,17 @@ PTURN = 'playerturn';
 class Player {
     constructor(id, area) {
         this.id = id;
-        this.engine_hand = new Hand([]);
-        this.photo_hand  = new Hand([]);
-        this.engine = null;//XXX
+        this.engine_hand = new Hand(KIND_Engine, []);
+        this.photo_hand  = new Hand(KIND_Photo, []);
+        this.engine = new Engine();
 
         this.area = area;
     }
+}
+function get_current_player() {
+    const sm = GAME_ITEMS['state-machine'];
+    const player = GAME_ITEMS[sm.whose_turn];
+    return player;
 }
 class StateMachine {
 
@@ -49,15 +54,20 @@ class StateMachine {
         //document.body.appendChild(ecard.element());
 
         for (var i = 0; i < NUM_STOCK_CARDS; i += 1) { add_card_to_engine_stock(); }
+        for (var i = 1; i < numplayers+1; ++i) {
+            for (var j = 0; j < NUM_STARTING_CARDS; j += 1) {
+                draw_engine_card_to_player_hand(i);
+            }
+        }
         this.start_player_turn(1)
     }
 
     start_player_turn(i) {
         this.whose_turn = i;
         const options = [
-            ['Take one Engine Card from stock/deck', this.handle_take_action],
-            ['Play one Engine Card from hand', () => {console.log("Play");}],
-            ['Flip one Photo Card in grid', this.handle_flip_action],
+            ['Take one Engine Card from stock/deck', () => {StateMachine.handle_take_action();}],
+            ['Play one Engine Card from hand', () => {StateMachine.handle_play_action();}],
+            ['Flip one Photo Card in grid', () => {StateMachine.handle_flip_action();}],
             ['Activate Engine', () => {console.log("Activate");}],
         ];
         set_text_with_options(`Player ${i} turn. Select one: `, options);
@@ -66,10 +76,15 @@ class StateMachine {
         //document.getElementById(`player-area-${this.whose_turn}`).classList.add("current-turn");
     }
 
-    handle_flip_action() {
+    static handle_flip_action() {
         set_text("Select Photo Card to flip", false, null, 1000);
         document.addEventListener("click", StateMachine.flip_input_handler_click);
         document.getElementById("color-grid").classList.add("ACTIVE");
+    }
+    static reset_after_flip_action() { 
+        document.removeEventListener("click", StateMachine.flip_input_handler_click);
+        document.getElementById("color-grid").classList.remove("ACTIVE");
+
     }
 
     static flip_input_handler_click(event) {
@@ -84,27 +99,35 @@ class StateMachine {
             }
             c.flip_up();
 
-            document.removeEventListener("click", StateMachine.flip_input_handler_click);
-            document.getElementById("color-grid").classList.remove("ACTIVE");
-
-            GAME_ITEMS['state-machine'].start_adversary_turn();
+            const sm = GAME_ITEMS['state-machine'];
+            StateMachine.reset_after_flip_action();
+            sm.start_adversary_turn();
         }
     }
 
-    handle_take_action() {
+    static handle_take_action() {
         set_text("Select an Engine Card from the stock or draw one from the Engine Deck", false, null, 0);
         document.addEventListener("click", StateMachine.take_engine_card_handler_click);
         document.getElementById("engine-stock").classList.add("ACTIVE");
         document.getElementById("engine-deck").classList.add("ACTIVE");
     }
 
+    static reset_after_take_action() {
+        document.removeEventListener("click", StateMachine.take_engine_card_handler_click);
+        document.getElementById("engine-stock").classList.remove("ACTIVE");
+        document.getElementById("engine-deck").classList.remove("ACTIVE");
+
+    }
+
     static take_engine_card_handler_click(event) {
         const sm = GAME_ITEMS['state-machine'];
+        var complete = false;
 
         const deck = event.target.closest("#engine-deck");
         if (deck) {
             console.log("DRAW");
             draw_engine_card_to_player_hand(sm.whose_turn);
+            complete = true;
         }
         else {
             const stock = event.target.closest("#engine-stock");
@@ -122,12 +145,95 @@ class StateMachine {
 
             const player = GAME_ITEMS[sm.whose_turn];
             player.engine_hand.add(c);
+            complete = true;
         }
 
-        sm.start_adversary_turn();
+        if (complete) {
+            StateMachine.reset_after_take_action();
+            sm.start_adversary_turn();
+        }
     }
 
+    static handle_play_action() {
+        const sm = GAME_ITEMS['state-machine'];
+        const p = get_current_player();
+        if (p.engine_hand.cards.length == 0) {
+            set_text(
+                "Player has no engine cards to play. Select another option.",
+                true,
+                () => {sm.start_player_turn(sm.whose_turn);},
+                0
+            );
+            return;
+        }
+        set_text("Select Engine Card to play.", false, null, 1000);
+        document.addEventListener("click", StateMachine.play_engine_card_handler_click);
+        p.area.querySelector(".engine-hand").classList.add("ACTIVE");
+    }
+
+    static reset_after_play_action() {
+        const p = get_current_player();
+        document.removeEventListener("click", StateMachine.play_engine_card_handler_click);
+        p.area.querySelector(".engine-hand").classList.remove("ACTIVE");
+    }
+
+    static play_engine_card_handler_click(event) {
+        const sm = GAME_ITEMS['state-machine'];
+        const player = GAME_ITEMS[sm.whose_turn];
+        const hand = event.target.closest(".engine-hand");
+        if (!hand) {
+            // we clicked something that wasn't the engine deck and isn't in the stock 
+            return;
+        }
+        const card = event.target.closest(".engine-card");
+        if (!card) {
+            // we didn't click an engine card
+            return;
+        }
+
+        const c = Card.card_from_ele(card);
+        card.classList.add("selected");
+
+        // don't remove card from hand just yet so that player can still see it.
+
+        // not actually complete. just move on to next subaction
+        StateMachine.reset_after_play_action();
+        StateMachine.handle_place_in_engine_subaction(c);
+    }
+
+    static handle_place_in_engine_subaction(card) {
+
+        const sm = GAME_ITEMS['state-machine'];
+        const p = get_current_player();
+        set_text("Select Engine Card to play.", false, null, 1000);
+        // store off arg. Could use closure, but want to be able to remove listener by name.
+        StateMachine.play_engine_card_subaction.card = card;
+        document.addEventListener("click", StateMachine.play_engine_card_subaction);
+        p.area.querySelector(".engine").classList.add("ACTIVE");
+    }
+
+    static reset_after_place_in_engine_subaction() {
+        const p = get_current_player();
+        const card = StateMachine.play_engine_card_subaction.card;
+        card.element().classList.remove("selected");
+
+        p.engine_hand.remove(card);
+        StateMachine.play_engine_card_subaction.card = null;
+        document.removeEventListener("click", StateMachine.play_engine_card_subaction);
+        p.area.querySelector(".engine").classList.remove("ACTIVE");
+    }
+
+    static play_engine_card_subaction() {
+        const card = StateMachine.play_engine_card_subaction.card;
+
+
+        StateMachine.reset_after_place_in_engine_subaction();
+    }
+
+
+
     start_adversary_turn() {
+        console.log("ADVERSARY TURN");
         //document.getElementById(`player-area-${this.whose_turn}`).classList.remove("current-turn");
         GAME_ITEMS[this.whose_turn].area.classList.remove("current-turn");
         // setup for next player
@@ -135,14 +241,20 @@ class StateMachine {
         if (this.whose_turn == GAME_ITEMS['num-players'] + 1) {
             this.whose_turn = 1;
         }
-        set_text("Identity Thief turn")
+        set_text(
+            "Identity Thief turn. Press to skip.",
+            true,
+            () => {this.start_player_turn(this.whose_turn);},
+            0
+        );
+
 
     }
 }
 
-
 function input_handler_ack_text(event) {
     if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
         const tb = document.getElementById("text-box");
         tb.classList.remove("new-content");
 
@@ -218,12 +330,12 @@ function new_player(id) {
     //const engine_hand = document.createElement("div");
     //engine_hand.classList.add("engine-hand");
     //engine_hand.textContent = "Engine Hand";
-    const photo_hand = document.createElement("div");
+    //const photo_hand = document.createElement("div");
     //photo_hand.textContent = "Photo Hand";
-    photo_hand.classList.add("photo-hand");
-    const engine = document.createElement("div");
+    //photo_hand.classList.add("photo-hand");
+    //const engine = document.createElement("div");
     //engine.textContent = "Engine";
-    engine.classList.add("engine");
+    //engine.classList.add("engine");
 
     var label = document.createElement('div');
     label.textContent = `Player ${id}`;
@@ -238,12 +350,12 @@ function new_player(id) {
     label = document.createElement('span');
     label.textContent = 'Photo Hand:';
     player.appendChild(label);
-    player.appendChild(photo_hand);
+    player.appendChild(p.photo_hand.refresh_dom());
 
     label = document.createElement('span');
     label.textContent = 'Engine:';
     player.appendChild(label);
-    player.appendChild(engine);
+    player.appendChild(p.engine.refresh_dom());
 
     areas.appendChild(player);
 

@@ -83,7 +83,8 @@ class Deck {
 }
 
 class Hand {
-    constructor(cards=[]) {
+    constructor(kind, cards=[]) {
+        this.kind = kind;
         this.cards = cards;
         this.element_ = null;
     }
@@ -93,12 +94,30 @@ class Hand {
         this.refresh_dom();
     }
 
+    remove(card) {
+        const idx = this.cards.indexOf(card);
+        if (idx < 0) {
+            throw new Error("Card not in hand.");
+        }
+        this.cards.splice(idx, 1);
+        this.refresh_dom();
+    }
+
     refresh_dom() {
         // already in html
         var ele = this.element_;
         if (ele == null) {
             ele = document.createElement("div");
             ele.classList.add("hand");
+            if (this.kind === KIND_Photo) {
+                ele.classList.add("photo-hand");
+            }
+            else if (this.kind === KIND_Engine) {
+                ele.classList.add("engine-hand");
+            }
+            else {
+                throw new Error(`Invalid kind: ${this.kind}`);
+            }
         }
         ele.replaceChildren();
 

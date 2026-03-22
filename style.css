@@ -126,6 +126,24 @@ body {
     border-style: dashed;
 }
 
+.engine-hand.ACTIVE > .engine-card {
+    border: magenta;
+    border-style: solid;
+}
+.engine-hand.ACTIVE > .engine-card:hover {
+    border: green;
+    border-style: dashed;
+}
+.engine-card.selected {
+    border: red;
+    border-style: dashed;
+}
+
+.engine.ACTIVE {
+    border: magenta;
+    border-style: solid;
+}
+
 /*
 .top-arrow { background-color: lightblue; }
 .bot-arrow { background-color: lightgreen; }
@@ -197,4 +215,21 @@ body {
 
 .player-id-header {
     text-decoration: underline;
+}
+
+.engine-placeholder {
+    visibility: hidden;
+    width: fit-content;
+    height: fit-content;
+}
+.engine.ACTIVE > .engine-placeholder.can-place {
+    visibility: visible;
+    border: white;
+    border-style: solid;
+}
+.engine.ACTIVE > .engine-placeholder.can-place:hover {
+    visibility: visible;
+    color: green;
+    border: green;
+    border-style:dashed; 
 }
