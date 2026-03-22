@@ -3,8 +3,44 @@ body {
     color: white;
     background-color: black;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     font-size:20px;
+}
+
+#text-box {
+    min-height:4em;
+    padding:8px;
+    margin:4px;
+
+    border: white;
+    border-style: solid;
+    border-radius: 6px;
+    align-content: center; 
+}
+#text-box.new-content {
+    border: yellow;
+    border-style: solid;
+}
+
+#text-options {
+    display: flex;
+    flex-direction: row;
+}
+.option {
+    padding:8px;
+}
+.option:hover {
+    text-decoration: underline;
+    color: green;
+}
+.option::before {
+    content: "‣";
+    margin-right: 4px;
+}
+
+#shared-stuff {
+    display: flex;
+    flex-direction: row;
 }
 
 .card {
@@ -22,6 +58,13 @@ body {
     border-radius: 6px;
 }
 
+.card[color="green"] { background-color: green; }
+.card[color="red"] { background-color: red; }
+.card[color="yellow"] { background-color: yellow; }
+.card[color="blue"] { background-color: blue; }
+.card[color="orange"] { background-color: orange; }
+.card[color="purple"] { background-color: purple; }
+/* MUST come after the .card[color=...] stuff so that it overrules.*/
 .photo-card[face-up=false] {
     background-color: darkgray;
 }
@@ -29,12 +72,6 @@ body {
     visibility: hidden;
 }
 
-.card[color="green"] { background-color: green; }
-.card[color="red"] { background-color: red; }
-.card[color="yellow"] { background-color: yellow; }
-.card[color="blue"] { background-color: blue; }
-.card[color="orange"] { background-color: orange; }
-.card[color="purple"] { background-color: purple; }
 
 #color-grid {
     border: gray;
@@ -61,6 +98,25 @@ body {
     margin: 4px;
     padding: 4px;
 }
+#engine-stock.ACTIVE > .engine-card {
+    border: red;
+    border-style: dashed;
+}
+#engine-stock.ACTIVE > .engine-card:hover {
+    border: green;
+    border-style: solid;
+}
+
+/* require engine stock to be next sibling of engine-deck */
+#engine-deck:has(+ #engine-stock.ACTIVE) {
+    border: red;
+    border-style: dashed;
+}
+#engine-deck:has(+ #engine-stock.ACTIVE):hover {
+    border: green;
+    border-style: solid;
+}
+
 /*
 .top-arrow { background-color: lightblue; }
 .bot-arrow { background-color: lightgreen; }
@@ -80,7 +136,8 @@ body {
 
 #player-areas {
     display:flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
 
     margin: 4px;
     padding: 4px;
@@ -97,6 +154,10 @@ body {
     border-style: solid;
     border-radius: 6px;
 }
+.player-area.current-turn {
+    border: purple;
+    border-style: solid;
+}
 
 #engine-deck {
     border: gray;
@@ -112,7 +173,8 @@ body {
     border-style: solid;
     border-radius: 6px;
     display:flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     height: fit-content;
     width: fit-content;
 }

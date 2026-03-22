@@ -31,6 +31,7 @@ class PhotoCard extends Card {
         this.element_ = card;
 
         // DEBUG click handler
+        /*
         this.element_.onclick = (event) => {
             console.log("DEBUG flip.");
             const e = event.target;
@@ -44,6 +45,7 @@ class PhotoCard extends Card {
             //cg.shuffle_row(row);
             cg.shuffle_col(col);
         };
+        */
 
         return this.element_;
     }

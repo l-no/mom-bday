@@ -20,7 +20,6 @@ const PC_STATE_UNINIT  = "pc uninitialized";
 const PC_STATE_GRID = "pc in grid";
 const PC_STATE_HAND = "pc in hand";
 
-
 /////////////////////////////////////////
 // CONFIG STUFF
 /////////////////////////////////////////
