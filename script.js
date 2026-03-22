@@ -1,3 +1,5 @@
+const GAME_ITEMS = {};
+
 function new_player(id) {
     console.log("player", id);
     const areas = document.getElementById("player-areas");
@@ -19,6 +21,16 @@ function new_player(id) {
     areas.appendChild(player);
 }
 
+function add_card_to_engine_stock() {
+    const ed = GAME_ITEMS['engine-deck'];
+    const card = ed.draw();
+
+    GAME_ITEMS['engine-stock'].push(card);
+
+    const stock = document.getElementById('engine-stock');
+    stock.appendChild(card.element())
+}
+
 function setup() {
     const qs = window.location.search;
     const params = new URLSearchParams(qs);
@@ -29,9 +41,24 @@ function setup() {
 
 
     photo_deck = PhotoCard.default_deck();
-    //photo_deck.shuffle();
+    photo_deck.shuffle();
     cg = new ColorGrid(photo_deck);
     cg.refresh_dom();
+
+
+    engine_deck = EngineCard.default_deck();
+
+    GAME_ITEMS['photo-deck'] = photo_deck;
+    GAME_ITEMS['engine-deck'] = engine_deck;
+
+    GAME_ITEMS['engine-stock'] = [];
+
+    document.getElementById('engine-deck').textContent = '<engine-deck>';
+    document.getElementById('engine-deck').onclick = add_card_to_engine_stock;
+    document.getElementById('engine-stock').textContent = '<engine-stock>';
+
+    //const ecard = EngineCard.deser("<ablue,>agreen,^tblue,vtgreen,!");
+    //document.body.appendChild(ecard.element());
 
 }
 

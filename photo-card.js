@@ -25,7 +25,7 @@ class PhotoCard extends Card {
         const card = document.createElement("div");
         card.classList.add("card");
         card.classList.add("photo-card");
-        card.classList.add("color-" + this.color);
+        card.setAttribute("color", this.color);
         card.setAttribute('face-up', this.face_up );
         card.setAttribute("uid", this.uid);
         this.element_ = card;
@@ -41,7 +41,8 @@ class PhotoCard extends Card {
             const idx = cg.cards.indexOf(this);
             const [col,row] = cg.idx_to_row_col(idx);
             console.log(col, row);
-            cg.shuffle_row(row);
+            //cg.shuffle_row(row);
+            cg.shuffle_col(col);
         };
 
         return this.element_;

@@ -74,7 +74,7 @@ class ColorGrid {
         var placeholder_col = GRID_COLS - 1;
 
         for (var i = 0; i < tmp.length; i += 1) {
-            console.log(tmp[i].element());
+            //console.log(tmp[i].element());
             var idx = null;
             if (tmp[i].element().classList.contains("placeholder")) {
                 // insert placeholders at end of row
@@ -84,6 +84,37 @@ class ColorGrid {
             else {
                 idx = this.row_col_to_idx(row, curcol);
                 curcol += 1;
+            }
+            this.cards[idx] = tmp[i];
+        }
+
+        this.refresh_dom()
+    }
+
+    shuffle_col(col) {
+        const tmp = [];
+        for (var row = 0; row < GRID_ROWS; row += 1) {
+            const idx = this.row_col_to_idx(row, col);
+            tmp.push(this.cards[idx]);
+            this.cards[idx] = null;
+        }
+
+        shuffle(tmp);
+
+        var currow = 0;
+        var placeholder_row = GRID_ROWS - 1;
+
+        for (var i = 0; i < tmp.length; i += 1) {
+            //console.log(tmp[i].element());
+            var idx = null;
+            if (tmp[i].element().classList.contains("placeholder")) {
+                // insert placeholders at end of row
+                idx = this.row_col_to_idx(placeholder_row, col);
+                placeholder_row -= 1;
+            }
+            else {
+                idx = this.row_col_to_idx(currow, col);
+                currow += 1;
             }
             this.cards[idx] = tmp[i];
         }

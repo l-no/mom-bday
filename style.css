@@ -3,8 +3,13 @@ body {
     color: white;
     background-color: black;
     display: flex;
+    flex-direction: row;
+    font-size:20px;
 }
 
+.card {
+    user-select: none;
+}
 
 .photo-card { 
     width: 20px;
@@ -24,12 +29,12 @@ body {
     visibility: hidden;
 }
 
-.color-green { background-color: green; }
-.color-red { background-color: red; }
-.color-yellow { background-color: yellow; }
-.color-blue { background-color: blue; }
-.color-orange { background-color: orange; }
-.color-purple { background-color: purple; }
+.card[color="green"] { background-color: green; }
+.card[color="red"] { background-color: red; }
+.card[color="yellow"] { background-color: yellow; }
+.card[color="blue"] { background-color: blue; }
+.card[color="orange"] { background-color: orange; }
+.card[color="purple"] { background-color: purple; }
 
 #color-grid {
     border: gray;
@@ -42,17 +47,36 @@ body {
 }
 
 .engine-card {
-    border: black;
+    border: gray;
     border-style: solid;
     border-radius: 6px;
     width: fit-content;
     display: flex;
     flex-direction: column;
     align-items: center;
+
+    width: fit-content;
+    height: fit-content;
+
+    margin: 4px;
+    padding: 4px;
 }
+/*
 .top-arrow { background-color: lightblue; }
 .bot-arrow { background-color: lightgreen; }
 .left-arrow { background-color: red; }
+*/
+.arrow[color="green"] {color: green;}
+.arrow[color="blue"] {color: blue;}
+.arrow[color="red"] {color: red;}
+.arrow[color="yellow"] {color: yellow;}
+.arrow[color="orange"] {color: orange;}
+.arrow[color="purple"] {color: purple;}
+
+.arrow {
+    padding: 3px;
+    font-weight: bold;
+}
 
 #player-areas {
     display:flex;
@@ -74,3 +98,21 @@ body {
     border-radius: 6px;
 }
 
+#engine-deck {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+    height: fit-content;
+    width: fit-content;
+
+}
+
+#engine-stock {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+    display:flex;
+    flex-direction: column;
+    height: fit-content;
+    width: fit-content;
+}

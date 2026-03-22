@@ -12,6 +12,10 @@ const YELLOW = 'yellow';
 const COLORS = [ GREEN, BLUE, PURPLE, RED, ORANGE, YELLOW,];
 
 
+// ENGINE STUFF
+const TOWARDS = 'towards';
+const AWAY = 'away';
+
 const PC_STATE_UNINIT  = "pc uninitialized";
 const PC_STATE_GRID = "pc in grid";
 const PC_STATE_HAND = "pc in hand";
