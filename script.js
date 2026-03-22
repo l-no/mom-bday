@@ -223,11 +223,24 @@ class StateMachine {
         p.area.querySelector(".engine").classList.remove("ACTIVE");
     }
 
-    static play_engine_card_subaction() {
+    static play_engine_card_subaction(event) {
+        const placeholder = event.target.closest(".engine-placeholder");
+        if (!placeholder) {
+            // ignore click
+            return;
+        }
+
         const card = StateMachine.play_engine_card_subaction.card;
+        const p = get_current_player();
+        const row = placeholder.getAttribute('row');
+        const col = placeholder.getAttribute('col');
+        console.log("putting ", card, "at", row, col);
+        p.engine.add_at(row, col, card);
 
 
         StateMachine.reset_after_place_in_engine_subaction();
+        const sm = GAME_ITEMS['state-machine'];
+        sm.start_adversary_turn();
     }
 
 

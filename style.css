@@ -139,11 +139,6 @@ body {
     border-style: dashed;
 }
 
-.engine.ACTIVE {
-    border: magenta;
-    border-style: solid;
-}
-
 /*
 .top-arrow { background-color: lightblue; }
 .bot-arrow { background-color: lightgreen; }
@@ -215,6 +210,19 @@ body {
 
 .player-id-header {
     text-decoration: underline;
+}
+
+.engine {
+    display: grid;
+    place-items: center;
+    gridTemplateColumns: 1fr;
+    gridTemplateRows: 1fr;
+    border: gray;
+    border-style: solid;
+}
+.engine.ACTIVE {
+    border: magenta;
+    border-style: solid;
 }
 
 .engine-placeholder {
