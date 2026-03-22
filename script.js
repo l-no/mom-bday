@@ -29,9 +29,9 @@ function setup() {
 
 
     photo_deck = PhotoCard.default_deck();
-    photo_deck.shuffle();
+    //photo_deck.shuffle();
     cg = new ColorGrid(photo_deck);
-    cg.add_to_dom();
+    cg.refresh_dom();
 
 }
 

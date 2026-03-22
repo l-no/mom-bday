@@ -20,6 +20,9 @@ body {
 .photo-card[face-up=false] {
     background-color: darkgray;
 }
+.photo-card.placeholder {
+    visibility: hidden;
+}
 
 .color-green { background-color: green; }
 .color-red { background-color: red; }

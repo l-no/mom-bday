@@ -32,6 +32,11 @@ class Card {
         this.face_up = false;
         if (this.element_) { this.element_.setAttribute("face-up", this.face_up); }
     }
+    
+    flip() {
+        if (this.face_up) { this.flip_down(true); }
+        else { this.flip_up(true); }
+    }
 
     static find_by_uid(uid) {
         return this._cards[uid]
@@ -47,20 +52,25 @@ class Card {
 }
 
 
+// google AI
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const rand = new Uint32Array(1);
+        window.crypto.getRandomValues(rand); 
+        const j = rand[0] % (i + 1); 
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+}
+
 class Deck {
     constructor(cards=[]) {
         this.cards = cards;
     }
 
-    // google AI
     shuffle() {
-        for (let i = this.cards.length - 1; i > 0; i--) {
-            const rand = new Uint32Array(1);
-            window.crypto.getRandomValues(rand); 
-            const j = rand[0] % (i + 1); 
-            [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-        }
+        shuffle(this.cards);
     }
+
 
     draw() {
         if (this.cards.length > 0) {

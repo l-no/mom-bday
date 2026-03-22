@@ -1,32 +1,110 @@
 class ColorGrid {
+    static _singleton = null;
+
+    static get() {
+        if (!ColorGrid._singleton) {
+            throw new Error("No ColorGrid.");
+        }
+        return ColorGrid._singleton;
+    }
+
     constructor(deck) {
-        this.rows = GRID_ROWS
-        this.cols = GRID_COLS
+        if (ColorGrid._singleton) {
+            throw new Error("Already made a colorgrid.");
+        }
+        this.rows = GRID_ROWS;
+        this.cols = GRID_COLS;
 
-        this.deck = deck
-        this.cards = deck.cards
+        this.deck = deck;
+        this.cards = deck.cards;
 
-        for (const c of this.cards) { console.assert(!c.face_up); }
+        for (const c of this.cards) {
+            console.assert(!c.face_up);
+            c.state = PC_STATE_GRID;
+
+            // DEBUG
+            c.flip();
+        }
 
         this.element_ = null;
 
+        ColorGrid._singleton = this;
     }
 
-    add_to_dom() {
-
-        console.assert(!this.element_);
-
-        // already in grid
-        //const ele = document.createElement("div");
-        //ele.classList.add("color-grid");
+    refresh_dom() {
+        // already in html
         const ele = document.getElementById("color-grid");
+        ele.replaceChildren();
 
-        for (const c of this.cards) { ele.appendChild(c.element()); }
+        for (var c of this.cards) {
+            if (c === null) {
+                console.log("NULL");
+            }
+            ele.appendChild(c.element());
+        }
 
         this.element_ = ele;
         return this.element_;
     }
 
+
+
+    row_col_to_idx(row, col) {
+        return row * this.cols + col;
+    }
+
+    idx_to_row_col(idx) {
+        const col = idx % this.cols;
+        const row = Math.floor(idx / this.cols);
+        return [col, row];
+    }
+
+
+    shuffle_row(row) {
+        const tmp = [];
+        for (var col = 0; col < GRID_COLS; col += 1) {
+            const idx = this.row_col_to_idx(row, col);
+            tmp.push(this.cards[idx]);
+            this.cards[idx] = null;
+        }
+
+        shuffle(tmp);
+
+        var curcol = 0;
+        var placeholder_col = GRID_COLS - 1;
+
+        for (var i = 0; i < tmp.length; i += 1) {
+            console.log(tmp[i].element());
+            var idx = null;
+            if (tmp[i].element().classList.contains("placeholder")) {
+                // insert placeholders at end of row
+                idx = this.row_col_to_idx(row, placeholder_col);
+                placeholder_col -= 1;
+            }
+            else {
+                idx = this.row_col_to_idx(row, curcol);
+                curcol += 1;
+            }
+            this.cards[idx] = tmp[i];
+        }
+
+        this.refresh_dom()
+    }
+
+
+
+    /*
+    shuffle_row(row):
+        r = [this.take(c, row) for c in range(this.cols)]
+        r = [card for card in r if card is not None]
+        SystemRandom().shuffle(r);
+        for col in range(this.cols):
+            if col < len(r):
+                this._put(r[col], col, row)
+            else:
+                this._put(None, col, row)
+    */
+    /*
     _get(col, row, remove=false) {
         console.assert(col >= 0);
         console.assert(row >= 0);
@@ -43,6 +121,16 @@ class ColorGrid {
         }
         return c
     }
+    shuffle_col(col):
+        c = [this.take(col, row) for row in range(this.rows)]
+        c = [card for card in c if card is not None]
+        SystemRandom().shuffle(c);
+        for row in range(this.rows):
+            if row < len(c):
+                this._put(c[row], col, row)
+            else:
+                this._put(None, col, row)
+    */
 }
 
 

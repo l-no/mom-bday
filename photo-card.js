@@ -14,12 +14,12 @@ class PhotoCard extends Card {
     constructor(color) {
         super(KIND_Photo);
         this.color = color;
+        this.state = PC_STATE_UNINIT;
     }
-
 
     element() {
         if (this.element_) {
-            return this.element;
+            return this.element_;
         }
 
         const card = document.createElement("div");
@@ -32,13 +32,40 @@ class PhotoCard extends Card {
 
         // DEBUG click handler
         this.element_.onclick = (event) => {
+            console.log("DEBUG flip.");
             const e = event.target;
             const c = Card.card_from_ele(e);
-            if (c.face_up) { c.flip_down(); }
-            else { c.flip_up(); }
+            //c.flip();
+            //c.remove_from_grid(true);
+            const cg = ColorGrid.get();
+            const idx = cg.cards.indexOf(this);
+            const [col,row] = cg.idx_to_row_col(idx);
+            console.log(col, row);
+            cg.shuffle_row(row);
         };
 
         return this.element_;
     }
 
+
+    remove_from_grid(replace=true) {
+        if (this.state !== PC_STATE_GRID) {
+            throw new Error("Not in grid.");
+        }
+
+        if (replace) {
+            const pc = new PhotoCard(null);
+            const n = pc.element();
+            n.classList.add("placeholder");
+            n.onclick = null;
+            this.element_.replaceWith(n);
+            const cg = ColorGrid.get();
+            const idx = cg.cards.indexOf(this);
+            cg.cards[idx] = pc;
+        }
+        else {
+            this.element_.remove();
+        }
+
+    }
 }
