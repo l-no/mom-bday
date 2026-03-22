@@ -2,7 +2,17 @@ const GAME_ITEMS = {};
 var STATE = null;
 
 SINIT = 'init';
-PTURN = 'turn';
+PTURN = 'playerturn';
+class Player {
+    constructor(id, area) {
+        this.id = id;
+        this.engine_hand = new Hand([]);
+        this.photo_hand  = new Hand([]);
+        this.engine = null;//XXX
+
+        this.area = area;
+    }
+}
 class StateMachine {
 
     constructor() {
@@ -10,23 +20,123 @@ class StateMachine {
         this.whose_turn = null;
     }
 
-    handle_init() {
-        const numplayers = GAME_ITEMS['num-players'];
-        set_text(`Press Enter to begin ${numplayers}-player game.`, ()=>{this.start_player_turn(1)}, 0);
+    handle_init(numplayers) {
+        set_text(`Press Enter to begin ${numplayers}-player game.`, true, () => {this.start_game(numplayers)}, 0);
+    }
+
+    start_game(numplayers) {
+        for (var i = 1; i < numplayers+1; ++i) { new_player(i); }
+
+        const photo_deck = PhotoCard.default_deck();
+        photo_deck.shuffle();
+        const cg = new ColorGrid(photo_deck);
+        cg.refresh_dom();
+
+
+        const engine_deck = EngineCard.default_deck();
+
+        GAME_ITEMS['photo-deck'] = photo_deck;
+        GAME_ITEMS['engine-deck'] = engine_deck;
+
+        GAME_ITEMS['engine-stock'] = [];
+        GAME_ITEMS['num-players'] = numplayers;
+
+
+        document.getElementById('engine-deck').textContent = '<engine-deck>';
+        document.getElementById('engine-stock').textContent = '<engine-stock>';
+
+        //const ecard = EngineCard.deser("<ablue,>agreen,^tblue,vtgreen,!");
+        //document.body.appendChild(ecard.element());
+
+        for (var i = 0; i < NUM_STOCK_CARDS; i += 1) { add_card_to_engine_stock(); }
+        this.start_player_turn(1)
     }
 
     start_player_turn(i) {
-
         this.whose_turn = i;
         const options = [
-            ['Take one Engine Card from stock/deck', () => {console.log("TAKE");}],
+            ['Take one Engine Card from stock/deck', this.handle_take_action],
             ['Play one Engine Card from hand', () => {console.log("Play");}],
-            ['Flip one Photo Card in grid', () => {console.log("Flip");}],
+            ['Flip one Photo Card in grid', this.handle_flip_action],
             ['Activate Engine', () => {console.log("Activate");}],
         ];
         set_text_with_options(`Player ${i} turn. Select one: `, options);
 
-        document.getElementById(`player-area-${i}`).classList.add("current-turn");
+        GAME_ITEMS[this.whose_turn].area.classList.add("current-turn");
+        //document.getElementById(`player-area-${this.whose_turn}`).classList.add("current-turn");
+    }
+
+    handle_flip_action() {
+        set_text("Select Photo Card to flip", false, null, 1000);
+        document.addEventListener("click", StateMachine.flip_input_handler_click);
+        document.getElementById("color-grid").classList.add("ACTIVE");
+    }
+
+    static flip_input_handler_click(event) {
+        const cardele = event.target.closest(".photo-card");
+        console.log(cardele);
+        if (cardele) {
+            const c = Card.card_from_ele(cardele);
+            // XXX logic for Placeholder cards??
+            if (c.face_up === true) { 
+                console.log("Already face up.");
+                return;
+            }
+            c.flip_up();
+
+            document.removeEventListener("click", StateMachine.flip_input_handler_click);
+            document.getElementById("color-grid").classList.remove("ACTIVE");
+
+            GAME_ITEMS['state-machine'].start_adversary_turn();
+        }
+    }
+
+    handle_take_action() {
+        set_text("Select an Engine Card from the stock or draw one from the Engine Deck", false, null, 0);
+        document.addEventListener("click", StateMachine.take_engine_card_handler_click);
+        document.getElementById("engine-stock").classList.add("ACTIVE");
+        document.getElementById("engine-deck").classList.add("ACTIVE");
+    }
+
+    static take_engine_card_handler_click(event) {
+        const sm = GAME_ITEMS['state-machine'];
+
+        const deck = event.target.closest("#engine-deck");
+        if (deck) {
+            console.log("DRAW");
+            draw_engine_card_to_player_hand(sm.whose_turn);
+        }
+        else {
+            const stock = event.target.closest("#engine-stock");
+            if (!stock) {
+                // we clicked something that wasn't the engine deck and isn't in the stock 
+                return;
+            }
+            const card = event.target.closest(".engine-card");
+            if (!card) {
+                // we didn't click an engine card
+                return;
+            }
+            const c = Card.card_from_ele(card);
+            remove_card_from_engine_stock(c);
+
+            const player = GAME_ITEMS[sm.whose_turn];
+            player.engine_hand.add(c);
+        }
+
+        sm.start_adversary_turn();
+    }
+
+    start_adversary_turn() {
+        //document.getElementById(`player-area-${this.whose_turn}`).classList.remove("current-turn");
+        GAME_ITEMS[this.whose_turn].area.classList.remove("current-turn");
+        // setup for next player
+        this.whose_turn += 1;
+        if (this.whose_turn == GAME_ITEMS['num-players'] + 1) {
+            this.whose_turn = 1;
+        }
+        set_text("Identity Thief turn")
+
     }
 }
 
@@ -50,9 +160,12 @@ function input_handler_ack_text(event) {
     }
 }
 
-function set_text(t, cb=null, timeout=2*1000) {
+function set_text(t, enter_for_ack=true, cb=null, timeout=2*1000) {
     const tb = document.getElementById("text-box");
     const tc = document.getElementById("text-content");
+    const to = document.getElementById("text-options");
+    to.replaceChildren();
+
     tc.textContent = t;
     tb.classList.add("new-content");
     tb.cb = cb;
@@ -62,15 +175,24 @@ function set_text(t, cb=null, timeout=2*1000) {
         }, timeout);
     }
 
-    document.addEventListener("keydown", input_handler_ack_text);
+    if (enter_for_ack) {
+        document.addEventListener("keydown", input_handler_ack_text);
+    }
+    else {
+        document.removeEventListener("keydown", input_handler_ack_text);
+    }
 }
 
 function set_text_with_options(t, options) {
+    document.removeEventListener("keydown", input_handler_ack_text);
+
     const tb = document.getElementById("text-box");
     const tc = document.getElementById("text-content");
     const to = document.getElementById("text-options");
     tc.textContent = t;
     tb.classList.add("new-content");
+
+    to.replaceChildren();
 
     options.forEach(([text, cb]) => {
         console.log(text, cb);
@@ -90,28 +212,73 @@ function new_player(id) {
     player.classList.add("player-area");
     player.id = (`player-area-${id}`);
 
-    const engine_hand = document.createElement("div");
-    engine_hand.textContent = "Engine Hand";
-    const photo_hand = document.createElement("div");
-    photo_hand.textContent = "Photo Hand";
-    const engine = document.createElement("div");
-    engine.textContent = "Engine";
+    const p = new Player(id, player);
+    GAME_ITEMS[id] = p;
 
-    player.appendChild(engine_hand);
+    //const engine_hand = document.createElement("div");
+    //engine_hand.classList.add("engine-hand");
+    //engine_hand.textContent = "Engine Hand";
+    const photo_hand = document.createElement("div");
+    //photo_hand.textContent = "Photo Hand";
+    photo_hand.classList.add("photo-hand");
+    const engine = document.createElement("div");
+    //engine.textContent = "Engine";
+    engine.classList.add("engine");
+
+    var label = document.createElement('div');
+    label.textContent = `Player ${id}`;
+    label.classList.add("player-id-header");
+    player.appendChild(label);
+
+    label = document.createElement('span');
+    label.textContent = 'Engine Hand:';
+    player.appendChild(label);
+    player.appendChild(p.engine_hand.refresh_dom());
+
+    label = document.createElement('span');
+    label.textContent = 'Photo Hand:';
+    player.appendChild(label);
     player.appendChild(photo_hand);
+
+    label = document.createElement('span');
+    label.textContent = 'Engine:';
+    player.appendChild(label);
     player.appendChild(engine);
 
     areas.appendChild(player);
+
+}
+
+function draw_engine_card_to_player_hand(id) {
+    deck = GAME_ITEMS['engine-deck'];
+    // XXX check for empty deck
+    const card = deck.draw();
+    const player = GAME_ITEMS[id];
+    player.engine_hand.add(card);
 }
 
 function add_card_to_engine_stock() {
     const ed = GAME_ITEMS['engine-deck'];
+    // XXX check that deck not empty
     const card = ed.draw();
 
     GAME_ITEMS['engine-stock'].push(card);
 
     const stock = document.getElementById('engine-stock');
     stock.appendChild(card.element())
+}
+
+function remove_card_from_engine_stock(card, replace=true) {
+    const stock = GAME_ITEMS['engine-stock'] ;
+    const idx = stock.indexOf(card);
+    if (idx < 0) {
+        throw new Error("Card not found in stock");
+    }
+    stock.splice(idx, 1);
+
+    if (replace) {
+        add_card_to_engine_stock();
+    }
 }
 
 function player_add_engine_card(player) {
@@ -122,37 +289,11 @@ function setup() {
     const qs = window.location.search;
     const params = new URLSearchParams(qs);
     const numplayers = parseInt(params.get("players")) ? parseInt(params.get("players")) : 4;
-    for (var i = 1; i < numplayers+1; ++i) {
-        new_player(i);
-    }
-
-
-    photo_deck = PhotoCard.default_deck();
-    photo_deck.shuffle();
-    cg = new ColorGrid(photo_deck);
-    cg.refresh_dom();
-
-
-    engine_deck = EngineCard.default_deck();
-
-    GAME_ITEMS['photo-deck'] = photo_deck;
-    GAME_ITEMS['engine-deck'] = engine_deck;
-
-    GAME_ITEMS['engine-stock'] = [];
-    GAME_ITEMS['num-players'] = numplayers;
-
-
-    document.getElementById('engine-deck').textContent = '<engine-deck>';
-    document.getElementById('engine-deck').onclick = add_card_to_engine_stock;
-    document.getElementById('engine-stock').textContent = '<engine-stock>';
-
-    //const ecard = EngineCard.deser("<ablue,>agreen,^tblue,vtgreen,!");
-    //document.body.appendChild(ecard.element());
 
     const sm = new StateMachine();
     GAME_ITEMS['state-machine'] = sm;
 
-    sm.handle_init();
+    sm.handle_init(numplayers);
 }
 
 document.addEventListener("DOMContentLoaded", setup);

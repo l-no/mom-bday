@@ -81,3 +81,35 @@ class Deck {
         }
     }
 }
+
+class Hand {
+    constructor(cards=[]) {
+        this.cards = cards;
+        this.element_ = null;
+    }
+
+    add(card) {
+        this.cards.push(card);
+        this.refresh_dom();
+    }
+
+    refresh_dom() {
+        // already in html
+        var ele = this.element_;
+        if (ele == null) {
+            ele = document.createElement("div");
+            ele.classList.add("hand");
+        }
+        ele.replaceChildren();
+
+        for (var c of this.cards) {
+            if (c === null) {
+                console.log("NULL");
+            }
+            ele.appendChild(c.element());
+        }
+
+        this.element_ = ele;
+        return this.element_;
+    }
+}

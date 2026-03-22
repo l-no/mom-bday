@@ -80,7 +80,16 @@ body {
 
     display: grid;
     grid-template-columns: repeat(6, 100px);
-
+}
+#color-grid.ACTIVE {
+    border: magenta;
+    border-style: solid;
+    border-radius: 6px;
+}
+#color-grid.ACTIVE > .photo-card:hover {
+    border: green;
+    border-style: dashed;
+    background-color: white;
 }
 
 .engine-card {
@@ -99,22 +108,22 @@ body {
     padding: 4px;
 }
 #engine-stock.ACTIVE > .engine-card {
-    border: red;
-    border-style: dashed;
+    border: magenta;
+    border-style: solid;
 }
 #engine-stock.ACTIVE > .engine-card:hover {
     border: green;
-    border-style: solid;
+    border-style: dashed;
 }
 
 /* require engine stock to be next sibling of engine-deck */
 #engine-deck:has(+ #engine-stock.ACTIVE) {
-    border: red;
-    border-style: dashed;
+    border: magenta;
+    border-style: solid;
 }
 #engine-deck:has(+ #engine-stock.ACTIVE):hover {
     border: green;
-    border-style: solid;
+    border-style: dashed;
 }
 
 /*
@@ -146,7 +155,7 @@ body {
 .player-area {
     display:flex;
     flex-direction: column;
-    align-items: center;
+    /*align-items: center;*/
 
     margin: 4px;
     padding: 4px;
@@ -177,4 +186,15 @@ body {
     flex-wrap: wrap;
     height: fit-content;
     width: fit-content;
+}
+
+.hand {
+    display:flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+
+.player-id-header {
+    text-decoration: underline;
 }
