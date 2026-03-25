@@ -58,7 +58,6 @@ class Engine {
                     ? (this.grid[row][col+1] ? this.grid[row][col+1] : null)
                     : null;
 
-        // link the cards?
         if (!above && !below && !left && !right) {
             if (col == 0 && row == 0) {
                 // very first thing will be at 0,0 so always allow
@@ -67,6 +66,13 @@ class Engine {
                 throw new Error(`Can't place at row ${row}, col ${col}: not touching any cards.`);
             }
         }
+
+        // link the cards
+        if (above) { card.set_up(above); }
+        if (below) { card.set_down(below); }
+        if (left) { card.set_left(left); }
+        if (right) { card.set_left(right); }
+
         if (this[row] === undefined) {
             this[row] = {};
         }
@@ -121,7 +127,7 @@ class Engine {
         for (const row of rows) {
             const cols = Object.keys(this.grid[row]).map(x => parseInt(x));
             console.log('colkeys', cols);
-            cols.sort()
+            cols.sort((a,b) => {return a-b;})
             if (mincol === null || cols[0] < mincol) { mincol = cols[0]; }
             if (maxcol === null || cols[cols.length-1] + 1 > maxcol) { maxcol = cols[cols.length-1] + 1; }
         }

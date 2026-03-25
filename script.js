@@ -121,9 +121,8 @@ class StateMachine {
     }
 
     static handle_select_action_color_subaction(card) {
-        const sm = GAME_ITEMS['state-machine'];
+        console.log('card', card);
         const p = get_current_player();
-        // store off arg. Could use closure, but want to be able to remove listener by name.
         const options = [];
         for (const color of COLORS) {
             options.push([color, () => {StateMachine.activate_engine_card_with_color(card, color)}]);
@@ -133,6 +132,7 @@ class StateMachine {
     }
 
     static reset_after_select_action_color_subaction(card) {
+        console.log("remove selected from card", card);
         card.classList.remove("selected");
     }
 
@@ -144,13 +144,13 @@ class StateMachine {
             c.arrow_up.color !== color &&
             c.arrow_down.color !== color
         ) {
-            StateMachine.handle_select_action_color_subaction();
             set_text(`Card has no ${color} arrows.`, true, () => {StateMachine.handle_select_action_color_subaction(card)}, 0);
             return;
         }
 
         c.activate(color);
-        StateMachine.reset_after_select_action_color_subaction()
+        StateMachine.reset_after_select_action_color_subaction(card)
+        const sm = GAME_ITEMS['state-machine'];
         sm.start_adversary_turn();
     }
 
@@ -401,7 +401,7 @@ function set_text_with_options(t, options) {
     to.replaceChildren();
 
     options.forEach(([text, cb]) => {
-        console.log(text, cb);
+        //console.log(text, cb);
         o = document.createElement("span");
         o.classList.add("option");
         o.textContent = text;

@@ -166,9 +166,53 @@ class EngineCard extends Card {
         return r;
     }
 
-    activate(color)  {
+    activate(color, already=[])  {
+        if (already.includes(this)) {
+            return;
+        }
         console.log(`Activate: ${this.power}, ${color}`);
         this.powerfn();
+        already.push(this);
+
+        if (   this.arrow_right.color === color
+            && this.arrow_right.direction === AWAY
+            && this.card_right
+            && this.card_right.arrow_left.color === color
+            && this.card_right.arrow_left.direction === TOWARDS)
+        {
+            console.log("activate right");
+            this.card_right.activate(color, already);
+        }
+
+        if (   this.arrow_left.color === color
+            && this.arrow_left.direction === AWAY
+            && this.card_left
+            && this.card_left.arrow_right.color === color
+            && this.card_left.arrow_right.direction === TOWARDS)
+        {
+            console.log("activate left");
+            this.card_left.activate(color, already);
+        }
+
+        if (   this.arrow_up.color === color
+            && this.arrow_up.direction === AWAY
+            && this.card_up.arrow_down
+            && this.card_up.arrow_down.color === color
+            && this.card_up.arrow_down.direction === TOWARDS)
+        {
+            console.log("activate up");
+            this.card_up.activate(color, already);
+        }
+
+        if (   this.arrow_down.color === color
+            && this.arrow_down.direction === AWAY
+            && this.card_down
+            && this.card_down.arrow_up.color === color
+            && this.card_down.arrow_up.direction === TOWARDS)
+        {
+            console.log("activate down");
+            this.card_down.activate(color, already);
+        }
     }
 
     set_left(other) {
