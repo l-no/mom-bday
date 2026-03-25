@@ -230,12 +230,18 @@ body {
     width: fit-content;
     height: fit-content;
 }
-.engine.ACTIVE > .engine-placeholder.can-place {
+.engine.ACTIVE.PLACING > .engine-placeholder.can-place {
     visibility: visible;
     border: white;
     border-style: solid;
 }
-.engine.ACTIVE > .engine-placeholder.can-place:hover {
+.engine.ACTIVE.PLACING > .engine-placeholder.can-place:hover {
+    visibility: visible;
+    color: green;
+    border: green;
+    border-style:dashed; 
+}
+.engine.ACTIVE:not(.PLACING) > .engine-card:hover {
     visibility: visible;
     color: green;
     border: green;

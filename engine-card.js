@@ -10,6 +10,7 @@ class EngineCard extends Card {
     constructor(power, arrow_left, arrow_right, arrow_up, arrow_down) {
         super(KIND_Engine);
         this.power = power;
+        this.powerfn = EngineCard.power_function_from_power(this.power);
 
         this.arrow_left = arrow_left;
         this.arrow_right = arrow_right;
@@ -20,6 +21,20 @@ class EngineCard extends Card {
         this.card_right = null;
         this.card_up = null;
         this.card_down  = null;
+    }
+
+    power_take_one(c) {
+        console.log("TAKE ONE.");
+    }
+
+    static power_function_from_power(power) {
+        if (power === 'A') {
+            return this.power_take_one();
+        }
+        else {
+            return (c) => {console.log("Power unimplemented.");}
+        }
+
     }
 
     static default_deck() {
@@ -151,10 +166,10 @@ class EngineCard extends Card {
         return r;
     }
 
-    activate()  {
-        console.log(`Activate: ${this.power}`);
+    activate(color)  {
+        console.log(`Activate: ${this.power}, ${color}`);
+        this.powerfn();
     }
-
 
     set_left(other) {
         this.card_left = other;

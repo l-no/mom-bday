@@ -68,12 +68,90 @@ class StateMachine {
             ['Take one Engine Card from stock/deck', () => {StateMachine.handle_take_action();}],
             ['Play one Engine Card from hand', () => {StateMachine.handle_play_action();}],
             ['Flip one Photo Card in grid', () => {StateMachine.handle_flip_action();}],
-            ['Activate Engine', () => {console.log("Activate");}],
+            ['Activate Engine', () => {StateMachine.handle_activate_action();}],
         ];
         set_text_with_options(`Player ${i} turn. Select one: `, options);
 
         GAME_ITEMS[this.whose_turn].area.classList.add("current-turn");
         //document.getElementById(`player-area-${this.whose_turn}`).classList.add("current-turn");
+    }
+
+    static handle_activate_action() {
+        const p = get_current_player();
+        if (p.engine.count <= 0) {
+            const sm = GAME_ITEMS['state-machine'];
+            set_text(
+                "Player has no cards in Engine. Select another option.",
+                true,
+                () => {sm.start_player_turn(sm.whose_turn);},
+                0
+            );
+            return;
+        }
+        set_text("Select Engine Card to activate.", false, null, 1000);
+        document.addEventListener("click", StateMachine.activate_input_handler_click);
+        const area = document.querySelector(".player-area.current-turn");
+        const engine = area.querySelector(".engine");
+        engine.classList.add("ACTIVE");
+    }
+
+    static reset_after_activate_action() { 
+        document.removeEventListener("click", StateMachine.activate_input_handler_click);
+        const area = document.querySelector(".player-area.current-turn");
+        const engine = area.querySelector(".engine");
+        engine.classList.remove("ACTIVE");
+    }
+
+    static activate_input_handler_click(event) {
+        const engine = event.target.closest(".engine.ACTIVE");
+        if (!engine) {
+            // we clicked something that wasn't the engine deck and isn't in the stock 
+            return;
+        }
+        const card = event.target.closest(".engine-card");
+        if (!card) {
+            // we didn't click an engine card
+            return;
+        }
+
+        //const c = Card.card_from_ele(card);
+        StateMachine.reset_after_activate_action();
+
+        StateMachine.handle_select_action_color_subaction(card);
+    }
+
+    static handle_select_action_color_subaction(card) {
+        const sm = GAME_ITEMS['state-machine'];
+        const p = get_current_player();
+        // store off arg. Could use closure, but want to be able to remove listener by name.
+        const options = [];
+        for (const color of COLORS) {
+            options.push([color, () => {StateMachine.activate_engine_card_with_color(card, color)}]);
+        }
+        card.classList.add("selected");
+        set_text_with_options(`Select activation color: `, options);
+    }
+
+    static reset_after_select_action_color_subaction(card) {
+        card.classList.remove("selected");
+    }
+
+    static activate_engine_card_with_color(card, color) {
+        const c = Card.card_from_ele(card);
+        console.log(c, c.arrow_left);
+        if (c.arrow_left.color !== color &&
+            c.arrow_right.color !== color &&
+            c.arrow_up.color !== color &&
+            c.arrow_down.color !== color
+        ) {
+            StateMachine.handle_select_action_color_subaction();
+            set_text(`Card has no ${color} arrows.`, true, () => {StateMachine.handle_select_action_color_subaction(card)}, 0);
+            return;
+        }
+
+        c.activate(color);
+        StateMachine.reset_after_select_action_color_subaction()
+        sm.start_adversary_turn();
     }
 
     static handle_flip_action() {
@@ -202,14 +280,15 @@ class StateMachine {
     }
 
     static handle_place_in_engine_subaction(card) {
-
         const sm = GAME_ITEMS['state-machine'];
         const p = get_current_player();
         set_text("Select Engine Card to play.", false, null, 1000);
         // store off arg. Could use closure, but want to be able to remove listener by name.
         StateMachine.play_engine_card_subaction.card = card;
         document.addEventListener("click", StateMachine.play_engine_card_subaction);
-        p.area.querySelector(".engine").classList.add("ACTIVE");
+        const engine = p.area.querySelector(".engine");
+        engine.classList.add("ACTIVE");
+        engine.classList.add("PLACING");
     }
 
     static reset_after_place_in_engine_subaction() {
@@ -220,7 +299,9 @@ class StateMachine {
         p.engine_hand.remove(card);
         StateMachine.play_engine_card_subaction.card = null;
         document.removeEventListener("click", StateMachine.play_engine_card_subaction);
-        p.area.querySelector(".engine").classList.remove("ACTIVE");
+        const engine = p.area.querySelector(".engine");
+        engine.classList.remove("ACTIVE");
+        engine.classList.remove("PLACING");
     }
 
     static play_engine_card_subaction(event) {

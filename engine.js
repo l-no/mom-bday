@@ -28,6 +28,7 @@ class Engine {
         this.grid = {0 : {0 : new EnginePlaceholder(0,0,true)}};
         //this.grid = {"-1" : {0 : new EnginePlaceholder(-1,0,true)}};
         this.element_ = null;
+        this.count = 0;
     }
 
     log_grid() {
@@ -78,6 +79,7 @@ class Engine {
         }
         console.log("INSERT AT", row, col);
         this.grid[row][col] = card;
+        this.count += 1;
 
         // add spots for more cards
         this.try_add_card_placement_placeholder(row-1, col);
@@ -110,7 +112,7 @@ class Engine {
         ele.replaceChildren();
 
         const rows = Object.keys(this.grid).map(x => parseInt(x));
-        rows.sort();
+        rows.sort((a,b) => {return a-b;});
         console.log('rowkeys', rows);
         const minrow = parseInt(rows[0]);
         const maxrow = parseInt(rows[rows.length-1]) + 1;
