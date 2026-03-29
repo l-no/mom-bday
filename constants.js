@@ -28,4 +28,4 @@ const GRID_ROWS = 6;
 const GRID_COLS = 6;
 const NUM_STOCK_CARDS = 5;
 const NUM_STARTING_CARDS = 2;
-
+const COLOR_SET_SIZE = 4;

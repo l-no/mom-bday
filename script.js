@@ -31,7 +31,21 @@ class StateMachine {
 
         this.power_queue = null;
         this.power_idx = null;
+
+        this.completed = {};
+        for (const color of COLORS) { this.completed[color] = false; }
     }
+
+    is_game_complete() {
+        for (const color of COLORS) {
+            if (!this.completed[color]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    mark_complete(color) { this.completed[color] = true; }
 
     handle_init(numplayers) {
         set_text(`Press Enter to begin ${numplayers}-player game.`, true, () => {this.start_game(numplayers)}, 0);
@@ -79,6 +93,7 @@ class StateMachine {
             ['Play one Engine Card from hand', () => {StateMachine.handle_play_action();}],
             ['Flip one Photo Card in grid', () => {StateMachine.handle_flip_action();}],
             ['Activate Engine', () => {StateMachine.handle_activate_action();}],
+            ['Complete a Set', () => {StateMachine.handle_complete_action();}],
         ];
         set_text_with_options(`Player ${i} turn. Select one: `, options);
 
@@ -196,6 +211,56 @@ class StateMachine {
         }
 
     }
+
+    static handle_complete_action() {
+        const options = [];
+        for (const color of COLORS) {
+            options.push([color, () => {StateMachine.check_complete(color)}]);
+        }
+        set_text_with_options(`Select color to complete: `, options);
+    }
+
+    static check_complete(color) {
+        const p = get_current_player();
+        const sm = GAME_ITEMS['state-machine'];
+        var count = 0;
+        for (const card of p.photo_hand.cards) {
+            if (card.color === color) { count += 1; }
+        }
+        if (count < COLOR_SET_SIZE) {
+            set_text(
+                `Player has ${count} ${color} cards. Requires ${COLOR_SET_SIZE}.`,
+                true,
+                () => {sm.start_player_turn(sm.whose_turn);},
+                0
+            );
+        }
+        else {
+            count = 0;
+            // copy because we're going to mutate
+            const cards = [...p.photo_hand.cards];
+            for (const card of cards) {
+                if (card.color === color) {
+                    p.photo_hand.remove(card); 
+                }
+            }
+            sm.mark_complete(color);
+            set_text(
+                `Completed ${color} set.`,
+                true,
+                () => {
+                    if (sm.is_game_complete()) {
+                        set_text("Players win!!", true, null, 0);
+                    }
+                    else {
+                        sm.start_adversary_turn();
+                    }
+                },
+                0
+            );
+        }
+    }
+
 
     static handle_flip_action() {
         set_text("Select Photo Card to flip", false, null, 1000);
@@ -428,6 +493,9 @@ class StateMachine {
         const power = card.power;
         console.log(`Dispatch activation: ${card.power}.`);
         if (power === 'A') {
+            return StateMachine.power_take_one(card);
+        }
+        else if (true) { // XXX DEBUG XXX
             return StateMachine.power_take_one(card);
         }
         else {
@@ -675,6 +743,28 @@ function setup() {
     GAME_ITEMS['state-machine'] = sm;
 
     sm.handle_init(numplayers);
+
+    // DEBUG
+    /*
+    document.addEventListener("click", () => {
+        const cg = event.target.closest("#color-grid");
+        if (!cg) {
+            console.log("click not in color grid");
+            return;
+        }
+
+        const cardele = event.target.closest(".photo-card");
+        console.log(cardele);
+        if (cardele) {
+            const c = Card.card_from_ele(cardele);
+            console.log("debug take.");
+
+            const p = get_current_player();
+            c.remove_from_grid();
+            p.photo_hand.add(c);
+        }
+    });
+    */
 }
 
 document.addEventListener("DOMContentLoaded", setup);
