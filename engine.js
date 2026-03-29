@@ -68,6 +68,7 @@ class Engine {
         }
 
         // link the cards
+        console.log(`link: above ${above}, below ${below}, left ${left}, right ${right}.`);
         if (above) { card.set_up(above); }
         if (below) { card.set_down(below); }
         if (left) { card.set_left(left); }

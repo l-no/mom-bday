@@ -1,8 +1,6 @@
 const GAME_ITEMS = {};
 var STATE = null;
 
-SINIT = 'init';
-PTURN = 'playerturn';
 class Player {
     constructor(id, area) {
         this.id = id;
@@ -18,11 +16,21 @@ function get_current_player() {
     const player = GAME_ITEMS[sm.whose_turn];
     return player;
 }
+
+
+SINIT = 'init';
+SPTURN = 'playerturn';
+SPOWER = 'powerqueue';
+SADTURN = 'adversaryturn';
+
 class StateMachine {
 
     constructor() {
         this.state = SINIT;
         this.whose_turn = null;
+
+        this.power_queue = null;
+        this.power_idx = null;
     }
 
     handle_init(numplayers) {
@@ -39,6 +47,7 @@ class StateMachine {
 
 
         const engine_deck = EngineCard.default_deck();
+        engine_deck.shuffle();
 
         GAME_ITEMS['photo-deck'] = photo_deck;
         GAME_ITEMS['engine-deck'] = engine_deck;
@@ -63,6 +72,7 @@ class StateMachine {
     }
 
     start_player_turn(i) {
+        this.state = SPTURN;
         this.whose_turn = i;
         const options = [
             ['Take one Engine Card from stock/deck', () => {StateMachine.handle_take_action();}],
@@ -148,10 +158,43 @@ class StateMachine {
             return;
         }
 
-        c.activate(color);
+
+        const queue = StateMachine.activate(c, color);
         StateMachine.reset_after_select_action_color_subaction(card)
+
+        StateMachine.do_power_queue(queue);
+
+
+        //const sm = GAME_ITEMS['state-machine'];
+        //sm.start_adversary_turn();
+    }
+
+    static do_power_queue(queue) {
         const sm = GAME_ITEMS['state-machine'];
-        sm.start_adversary_turn();
+        sm.state = SPOWER;
+
+        sm.power_queue = queue;
+        sm.power_idx = 0;
+        console.log("Queue:", sm.power_queue.length);
+
+        sm.dispatch_power_queue();
+    }
+
+    dispatch_power_queue() {
+        console.log("dispatch", this.power_idx, this.power_queue);
+        if (this.power_queue.length > this.power_idx) {
+            const card = this.power_queue[this.power_idx];
+            this.power_idx += 1;
+            StateMachine.do_card_power(card);
+        }
+        else {
+            this.power_queue = null;
+            this.power_idx = null;
+            console.log("power queue done.");
+            const sm = GAME_ITEMS['state-machine'];
+            sm.start_adversary_turn();
+        }
+
     }
 
     static handle_flip_action() {
@@ -166,6 +209,12 @@ class StateMachine {
     }
 
     static flip_input_handler_click(event) {
+        const cg = event.target.closest("#color-grid");
+        if (!cg) {
+            console.log("click not in color grid");
+            return;
+        }
+
         const cardele = event.target.closest(".photo-card");
         console.log(cardele);
         if (cardele) {
@@ -324,9 +373,135 @@ class StateMachine {
         sm.start_adversary_turn();
     }
 
+    static power_take_one(c) {
+        console.log("power_take_one", c);
+        const cg = ColorGrid.get();
+        var can_do = false;
+        for (const c of cg.cards) {
+            if (c.face_up)  {
+                can_do = true;
+                break;
+            }
+        }
+        if (!can_do) {
+            const sm = GAME_ITEMS['state-machine'];
+            set_text("No face up Photo Card to take.", true, () => {sm.dispatch_power_queue();}, 1000);
+            return;
+        }
 
+        set_text("Select face up Photo Card to take", false, null, 1000);
+        document.addEventListener("click", StateMachine.take_photo_card_click_listener);
+        document.getElementById("color-grid").classList.add("ACTIVE");
+        document.getElementById("color-grid").classList.add("ACTIVE-face-up");
+    }
+    static reset_power_take_one() { 
+        document.removeEventListener("click", StateMachine.take_photo_card_click_listener);
+        document.getElementById("color-grid").classList.remove("ACTIVE");
+    }
+
+    static take_photo_card_click_listener(event) {
+        const cg = event.target.closest("#color-grid");
+        if (!cg) { return; }
+
+        const cardele = event.target.closest(".photo-card");
+        console.log(cardele);
+        if (cardele) {
+            const c = Card.card_from_ele(cardele);
+
+            if (c.face_up !== true) { 
+                console.log("card is face down.");
+                return;
+            }
+
+            const p = get_current_player();
+            c.remove_from_grid();
+            p.photo_hand.add(c);
+
+            StateMachine.reset_power_take_one();
+
+            const sm = GAME_ITEMS['state-machine'];
+            sm.dispatch_power_queue();
+        }
+    }
+
+    static do_card_power(card) {
+        const power = card.power;
+        console.log(`Dispatch activation: ${card.power}.`);
+        if (power === 'A') {
+            return StateMachine.power_take_one(card);
+        }
+        else {
+            const sm = GAME_ITEMS['state-machine'];
+            set_text(
+                `Power not implemented: ${power}.`,
+                true,
+                () => {sm.dispatch_power_queue();},
+                0
+            );
+        }
+
+    }
+
+    static activate(card, color, already=[])  {
+        const queue = [];
+        if (already.includes(card)) {
+            return queue; 
+        }
+        console.log(`Queue activation: ${card.power}, ${color}`);
+
+        queue.push(card);
+        already.push(card);
+
+        console.log('right',card.arrow_right.color ===
+            color,card.arrow_right.direction === AWAY , card.card_right
+            ,card.card_righ && tcard.card_right.arrow_left.color === color
+            ,card.card_righ && tcard.card_right.arrow_left.direction === TOWARDS);
+
+        if (   card.arrow_right.color === color
+            && card.arrow_right.direction === AWAY
+            && card.card_right
+            && card.card_right.arrow_left.color === color
+            && card.card_right.arrow_left.direction === TOWARDS)
+        {
+            console.log("RIGHT");
+            queue.push(...StateMachine.activate(card.card_right, color, already));
+        }
+
+        if (   card.arrow_left.color === color
+            && card.arrow_left.direction === AWAY
+            && card.card_left
+            && card.card_left.arrow_right.color === color
+            && card.card_left.arrow_right.direction === TOWARDS)
+        {
+            console.log("LEFT");
+            queue.push(...StateMachine.activate(card.card_left, color, already));
+        }
+
+        if (   card.arrow_up.color === color
+            && card.arrow_up.direction === AWAY
+            && card.card_up
+            && card.card_up.arrow_down.color === color
+            && card.card_up.arrow_down.direction === TOWARDS)
+        {
+            console.log("UP");
+            queue.push(...StateMachine.activate(card.card_up, color, already));
+        }
+
+        if (   card.arrow_down.color === color
+            && card.arrow_down.direction === AWAY
+            && card.card_down
+            && card.card_down.arrow_up.color === color
+            && card.card_down.arrow_up.direction === TOWARDS)
+        {
+            console.log("DOWN");
+            queue.push(...StateMachine.activate(card.card_down, color, already));
+        }
+
+        return queue;
+    }
 
     start_adversary_turn() {
+        this.state = SADTURN;
         console.log("ADVERSARY TURN");
         //document.getElementById(`player-area-${this.whose_turn}`).classList.remove("current-turn");
         GAME_ITEMS[this.whose_turn].area.classList.remove("current-turn");

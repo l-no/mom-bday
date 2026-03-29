@@ -86,10 +86,15 @@ body {
     border-style: solid;
     border-radius: 6px;
 }
-#color-grid.ACTIVE > .photo-card:hover {
+#color-grid.ACTIVE:not(.ACTIVE-face-up) > .photo-card:hover {
     border: green;
     border-style: dashed;
     background-color: white;
+}
+
+#color-grid.ACTIVE.ACTIVE-face-up > .photo-card[face-up=true]:hover {
+    border: green;
+    border-style: dashed;
 }
 
 .engine-card {
@@ -219,6 +224,8 @@ body {
     gridTemplateRows: 1fr;
     border: gray;
     border-style: solid;
+
+    width: fit-content;
 }
 .engine.ACTIVE {
     border: magenta;
