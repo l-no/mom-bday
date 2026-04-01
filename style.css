@@ -47,7 +47,7 @@ body {
     user-select: none;
 }
 
-.photo-card { 
+.photo-card {
     width: 20px;
     height: 40px;
     padding: 4px;
@@ -253,4 +253,37 @@ body {
     color: green;
     border: green;
     border-style:dashed; 
+}
+
+#adversary-deck {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+    height: fit-content;
+    width: fit-content;
+
+}
+#adversary-discard {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+    height: fit-content;
+    width: fit-content;
+
+}
+
+.adversary-card {
+    width: 50;
+    height: 50;
+    padding: 4px;
+    margin: 10px;
+
+    border: white;
+    border-style: solid;
+    border-radius: 6px;
+}
+.adversary-card.selected {
+    border: red;
+    border-style: solid;
+    border-radius: 6px;
 }

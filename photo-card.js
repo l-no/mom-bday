@@ -8,7 +8,7 @@ class PhotoCard extends Card {
                 cards.push(new PhotoCard(color));
             }
         }
-        return new Deck(cards);
+        return new Deck(cards, 'Photo Deck');
     }
 
     constructor(color) {

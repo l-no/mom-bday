@@ -63,15 +63,23 @@ class StateMachine {
         const engine_deck = EngineCard.default_deck();
         engine_deck.shuffle();
 
+        const adversary_deck = AdversaryCard.default_deck();
+        const adversary_discard = new Hand(KIND_Adversary, []);
+
         GAME_ITEMS['photo-deck'] = photo_deck;
         GAME_ITEMS['engine-deck'] = engine_deck;
+        GAME_ITEMS['adversary-deck'] = adversary_deck;
+        GAME_ITEMS['adversary-discard'] = adversary_discard;
 
         GAME_ITEMS['engine-stock'] = [];
         GAME_ITEMS['num-players'] = numplayers;
 
 
-        document.getElementById('engine-deck').textContent = '<engine-deck>';
+        document.getElementById('engine-deck').replaceChildren(engine_deck.refresh_dom());
         document.getElementById('engine-stock').textContent = '<engine-stock>';
+        document.getElementById('adversary-deck').replaceChildren(adversary_deck.refresh_dom());
+        document.getElementById('adversary-discard').textContent = '<adversary-discard>';
+        document.getElementById('adversary-discard').appendChild(adversary_discard.refresh_dom());
 
         //const ecard = EngineCard.deser("<ablue,>agreen,^tblue,vtgreen,!");
         //document.body.appendChild(ecard.element());
@@ -99,6 +107,17 @@ class StateMachine {
 
         GAME_ITEMS[this.whose_turn].area.classList.add("current-turn");
         //document.getElementById(`player-area-${this.whose_turn}`).classList.add("current-turn");
+    }
+
+    start_next_player_turn(i) {
+        // setup for next player
+        GAME_ITEMS[this.whose_turn].area.classList.remove("current-turn");
+        this.whose_turn += 1;
+        if (this.whose_turn == GAME_ITEMS['num-players'] + 1) {
+            this.whose_turn = 1;
+        }
+
+        this.start_player_turn(this.whose_turn);
     }
 
     static handle_activate_action() {
@@ -571,21 +590,41 @@ class StateMachine {
     start_adversary_turn() {
         this.state = SADTURN;
         console.log("ADVERSARY TURN");
-        //document.getElementById(`player-area-${this.whose_turn}`).classList.remove("current-turn");
-        GAME_ITEMS[this.whose_turn].area.classList.remove("current-turn");
-        // setup for next player
-        this.whose_turn += 1;
-        if (this.whose_turn == GAME_ITEMS['num-players'] + 1) {
-            this.whose_turn = 1;
-        }
+
         set_text(
-            "Identity Thief turn. Press to skip.",
+            "Identity Thief turn. <Enter> to draw a card.",
             true,
-            () => {this.start_player_turn(this.whose_turn);},
+            () => {this.adversary_draw()},
             0
         );
+    }
 
+    adversary_draw() {
+        const deck = GAME_ITEMS['adversary-deck'];
+        const discard = GAME_ITEMS['adversary-discard'];
 
+        const card = deck.draw();
+        card.element().classList.add("selected");
+        discard.prepend(card);
+
+        set_text(
+            "Card:",
+            true,
+            () => { this.handle_adversary_card(card); },
+            0
+        );
+    }
+
+    handle_adversary_card(card) {
+        set_text(
+                "done.",
+                true,
+                () => {
+                    card.element().classList.remove("selected");
+                    this.start_next_player_turn();
+                },
+                0
+        );
     }
 }
 

@@ -63,22 +63,38 @@ function shuffle(a) {
 }
 
 class Deck {
-    constructor(cards=[]) {
+    constructor(cards=[], name=null) {
         this.cards = cards;
+        this.element_ = null;
+        this.name = name;
     }
 
     shuffle() {
         shuffle(this.cards);
     }
 
-
     draw() {
         if (this.cards.length > 0) {
-            return this.cards.shift();
+            const card = this.cards.shift();
+            this.refresh_dom();
+            return card;
         }
         else {
             throw new Error("Deck is empty.");
         }
+    }
+
+    refresh_dom() {
+        // already in html
+        var ele = this.element_;
+        if (ele == null) {
+            ele = document.createElement("div");
+            ele.classList.add("deck");
+        }
+        ele.textContent = `${this.name}:${this.cards.length}`;
+
+        this.element_ = ele;
+        return this.element_;
     }
 }
 
@@ -91,6 +107,11 @@ class Hand {
 
     add(card) {
         this.cards.push(card);
+        this.refresh_dom();
+    }
+
+    prepend(card) {
+        this.cards.unshift(card);
         this.refresh_dom();
     }
 
@@ -115,9 +136,11 @@ class Hand {
             else if (this.kind === KIND_Engine) {
                 ele.classList.add("engine-hand");
             }
+            /*
             else {
                 throw new Error(`Invalid kind: ${this.kind}`);
             }
+            */
         }
         ele.replaceChildren();
 

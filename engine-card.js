@@ -90,7 +90,7 @@ class EngineCard extends Card {
         for (const s of strs) {
             cards.push(EngineCard.deser(s));
         }
-        return new Deck(cards);
+        return new Deck(cards, 'Engine Deck');
     }
 
     //comma separated list of
