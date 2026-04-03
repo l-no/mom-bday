@@ -73,6 +73,7 @@ class StateMachine {
         GAME_ITEMS['adversary-discard'] = adversary_discard;
         GAME_ITEMS['stolen-cards'] = stolen_cards;
 
+        GAME_ITEMS['color-grid'] = cg;
         GAME_ITEMS['engine-stock'] = [];
         GAME_ITEMS['num-players'] = numplayers;
 
@@ -461,6 +462,11 @@ class StateMachine {
         sm.start_adversary_turn();
     }
 
+
+
+
+
+
     static power_take_one(c) {
         console.log("power_take_one", c);
         const cg = ColorGrid.get();
@@ -512,11 +518,65 @@ class StateMachine {
         }
     }
 
+
+
+
+    static power_flip_cross(c) {
+        console.log("power_flip_cross", c);
+        const cg = ColorGrid.get();
+        var can_do = false;
+
+
+        set_text("Select Photo Card. Flip each card touching that card. ", false, null, 1000);
+        document.addEventListener("click", StateMachine.flip_cross_click_listener);
+        document.getElementById("color-grid").classList.add("ACTIVE");
+    }
+
+    static reset_power_flip_cross() { 
+        document.removeEventListener("click", StateMachine.flip_cross_click_listener);
+        document.getElementById("color-grid").classList.remove("ACTIVE");
+    }
+
+    static flip_cross_click_listener(event) {
+        const cgele = event.target.closest("#color-grid");
+        if (!cgele) { return; }
+
+        const cardele = event.target.closest(".photo-card");
+        console.log(cardele);
+        if (cardele) {
+            const cg = GAME_ITEMS['color-grid'];
+            const c = Card.card_from_ele(cardele);
+            const [col,row] = cg.find(c);
+
+            const left  = (col > 0)         ? cg.get(col-1, row) : null;
+            const right = (col < cg.cols-1) ? cg.get(col+1, row) : null;
+            const up    = (row > 0)         ? cg.get(col, row-1) : null;
+            const down  = (row < cg.rows-1) ? cg.get(col, row+1) : null;
+
+            if (left) {left.flip();}
+            if (right) {right.flip();}
+            if (down) {down.flip();}
+            if (up) {up.flip();}
+
+            StateMachine.reset_power_flip_cross();
+
+            const sm = GAME_ITEMS['state-machine'];
+            sm.dispatch_power_queue();
+        }
+    }
+
+
+
+
+
     static do_card_power(card) {
         const power = card.power;
         console.log(`Dispatch activation: ${card.power}.`);
         if (power === 'A') {
             return StateMachine.power_take_one(card);
+        }
+        else if (power === 'B') {
+            return StateMachine.power_flip_cross(card);
         }
         else if (true) { // XXX DEBUG XXX
             return StateMachine.power_take_one(card);

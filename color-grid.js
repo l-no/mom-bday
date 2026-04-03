@@ -140,6 +140,7 @@ class ColorGrid {
         this.refresh_dom()
     }
 
+    // also a static method named get...
     get(col, row) {
         console.assert(col >= 0);
         console.assert(row >= 0);
@@ -152,6 +153,13 @@ class ColorGrid {
         const idx = row * this.cols + col;
         const c = this.cards[idx];
         return c
+    }
+
+
+    find(card) {
+        const idx = this.cards.indexOf(card);
+        console.assert(idx >= 0);
+        return this.idx_to_row_col(idx);
     }
 
 
