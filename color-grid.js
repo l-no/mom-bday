@@ -25,6 +25,10 @@ class ColorGrid {
             // DEBUG
             c.flip();
         }
+        console.assert(this.rows == this.cols);
+        for (var i = 0; i < this.cols; i += 1) {
+            this.get(i,i).flip_up(false);
+        }
 
         this.element_ = null;
 
@@ -57,6 +61,20 @@ class ColorGrid {
         const col = idx % this.cols;
         const row = Math.floor(idx / this.cols);
         return [col, row];
+    }
+
+    flip_down_row(row) {
+        for (var col = 0; col < GRID_COLS; col += 1) {
+            const idx = this.row_col_to_idx(row, col);
+            this.cards[idx].flip_down(false);
+        }
+    }
+
+    flip_down_col(col) {
+        for (var row = 0; row < GRID_COLS; row += 1) {
+            const idx = this.row_col_to_idx(row, col);
+            this.cards[idx].flip_down(false);
+        }
     }
 
 
@@ -120,6 +138,20 @@ class ColorGrid {
         }
 
         this.refresh_dom()
+    }
+
+    get(col, row) {
+        console.assert(col >= 0);
+        console.assert(row >= 0);
+        if (col >= this.cols) {
+            throw new Error(`Column index exceeds number of columns: ${col} >= ${this.cols}`);
+        }
+        if (row >= this.rows) {
+            throw new Error(`Row index exceeds number of rows: ${row} >= ${this.rows}`);
+        }
+        const idx = row * this.cols + col;
+        const c = this.cards[idx];
+        return c
     }
 
 

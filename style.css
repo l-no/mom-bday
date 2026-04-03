@@ -72,6 +72,15 @@ body {
     visibility: hidden;
 }
 
+.photo-card.selectable {
+    border: purple;
+    border-style: dashed;
+}
+.photo-card.selectable:hover {
+    border: red;
+    border-style: dashed;
+}
+
 
 #color-grid {
     border: gray;
@@ -264,6 +273,14 @@ body {
 
 }
 #adversary-discard {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+    height: fit-content;
+    width: fit-content;
+
+}
+#stolen-cards{
     border: gray;
     border-style: solid;
     border-radius: 6px;

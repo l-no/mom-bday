@@ -65,11 +65,13 @@ class StateMachine {
 
         const adversary_deck = AdversaryCard.default_deck();
         const adversary_discard = new Hand(KIND_Adversary, []);
+        const stolen_cards = new Hand(KIND_Photo, []);
 
         GAME_ITEMS['photo-deck'] = photo_deck;
         GAME_ITEMS['engine-deck'] = engine_deck;
         GAME_ITEMS['adversary-deck'] = adversary_deck;
         GAME_ITEMS['adversary-discard'] = adversary_discard;
+        GAME_ITEMS['stolen-cards'] = stolen_cards;
 
         GAME_ITEMS['engine-stock'] = [];
         GAME_ITEMS['num-players'] = numplayers;
@@ -80,6 +82,8 @@ class StateMachine {
         document.getElementById('adversary-deck').replaceChildren(adversary_deck.refresh_dom());
         document.getElementById('adversary-discard').textContent = '<adversary-discard>';
         document.getElementById('adversary-discard').appendChild(adversary_discard.refresh_dom());
+        document.getElementById('stolen-cards').textContent = '<stolen-cards>';
+        document.getElementById('stolen-cards').appendChild(stolen_cards.refresh_dom());
 
         //const ecard = EngineCard.deser("<ablue,>agreen,^tblue,vtgreen,!");
         //document.body.appendChild(ecard.element());
@@ -607,8 +611,11 @@ class StateMachine {
         card.element().classList.add("selected");
         discard.prepend(card);
 
+        const text = (card.col !== null) ? `[${card.effect}] column ${card.col+1}`
+                                         : (card.row !== null) ? `[${card.effect}] row ${card.row+1}`
+                                         : `[${card.effect}]`;
         set_text(
-            "Card:",
+            `Card: ${text}`,
             true,
             () => { this.handle_adversary_card(card); },
             0
@@ -616,15 +623,195 @@ class StateMachine {
     }
 
     handle_adversary_card(card) {
+
+        const effect = card.effect;
+        console.log(`Adversary effect: ${card.effect}. c${card.col} r${card.row}`);
+        if (effect === 'a') {
+            // shuffle
+            const cg = ColorGrid.get();
+            if (card.col !== null) {
+                var do_steal = true;
+                for (var row = 0; row < cg.rows; row +=1 ) {
+                    const tmp = cg.get(card.col, row);
+                    if (!tmp.face_up) {
+                        // there is one face down, so no stealing
+                        do_steal = false;
+                    }
+                }
+                if (do_steal) {
+                    console.log("do steal");
+                    for (var row = 0; row < cg.rows; row +=1 ) {
+                        // all are face down, let player choose which to take
+                        cg.get(card.col, row).element().classList.add("selectable");
+                    }
+                    StateMachine.setup_steal_select(() => {
+                        cg.shuffle_col(card.col);
+                        set_text( "done.", true, () => { this.reset_after_adversary_card(card); }, 0);
+                    });
+                    return;
+                }
+                else {
+                    cg.shuffle_col(card.col);
+                }
+            }
+            else if (card.row !== null) {
+                var do_steal = true;
+                for (var col = 0; col < cg.cols; col +=1 ) {
+                    const tmp = cg.get(col, card.row);
+                    if (!tmp.face_up) {
+                        // there is one face up, so no stealing
+                        do_steal = false;
+                    }
+                }
+                if (do_steal) {
+                    console.log("do steal");
+                    for (var col = 0; col < cg.cols; col +=1 ) {
+                        // all are face down, let player choose which to take
+                        cg.get(col, card.row).element().classList.add("selectable");
+                    }
+                    StateMachine.setup_steal_select(() => {
+                        cg.shuffle_col(card.row);
+                        set_text( "done.", true, () => { this.reset_after_adversary_card(card); }, 0);
+                    });
+                    return;
+                }
+                else {
+                    cg.shuffle_col(card.row);
+                }
+            }
+            else {
+                throw new Error("Unreachable. Shuffle w/o row or col.");
+            }
+        }
+        else if (effect === 'b') {
+            // shuffle
+            const cg = ColorGrid.get();
+            if (card.col !== null) {
+                var do_steal = true;
+                for (var row = 0; row < cg.rows; row +=1 ) {
+                    const tmp = cg.get(card.col, row);
+                    if (tmp.face_up) {
+                        // there is one face up, so no stealing
+                        do_steal = false;
+                    }
+                }
+                if (do_steal) {
+                    console.log("do steal");
+                    for (var row = 0; row < cg.rows; row +=1 ) {
+                        // all are face down, let player choose which to take
+                        cg.get(card.col, row).element().classList.add("selectable");
+                    }
+                    StateMachine.setup_steal_select(() => {
+                        cg.flip_down_col(card.col);
+                        set_text( "done.", true, () => { this.reset_after_adversary_card(card); }, 0);
+                    });
+                    return;
+                }
+                else {
+                    cg.flip_down_col(card.col);
+                }
+            }
+            else if (card.row !== null) {
+                var do_steal = true;
+                for (var col = 0; col < cg.cols; col +=1 ) {
+                    const tmp = cg.get(col, card.row);
+                    if (tmp.face_up) {
+                        // there is one face up, so no stealing
+                        do_steal = false;
+                    }
+                }
+                if (do_steal) {
+                    console.log("do steal");
+                    for (var col = 0; col < cg.cols; col +=1 ) {
+                        // all are face down, let player choose which to take
+                        cg.get(col, card.row).element().classList.add("selectable");
+                    }
+                    StateMachine.setup_steal_select(() => {
+                        cg.flip_down_row(card.row);
+                        set_text( "done.", true, () => { this.reset_after_adversary_card(card); }, 0);
+                    });
+                    return;
+                }
+                else {
+                    cg.flip_down_row(card.row);
+                }
+            }
+            else {
+                throw new Error("Unreachable. Flip down w/o row or col.");
+            }
+        }
+        else {
+            const sm = GAME_ITEMS['state-machine'];
+            set_text(
+                `Effect not implemented: ${effect}.`,
+                true,
+                () => {this.reset_after_adversary_card(card);},
+                0
+            );
+        }
+
         set_text(
                 "done.",
                 true,
                 () => {
-                    card.element().classList.remove("selected");
-                    this.start_next_player_turn();
+                    this.reset_after_adversary_card(card);
                 },
                 0
         );
+    }
+
+    reset_after_adversary_card(card) {
+        card.element().classList.remove("selected");
+        this.start_next_player_turn();
+    }
+
+    static setup_steal_select(after=null) {
+        set_text("Select Photo Card to be stolen. :(", false, null, 1000);
+        StateMachine.steal_photo_card_click_listener.after = after;
+        document.addEventListener("click", StateMachine.steal_photo_card_click_listener);
+        //document.getElementById("color-grid").classList.add("ACTIVE");
+    }
+    static reset_after_steal_select() {
+        document.removeEventListener("click", StateMachine.steal_photo_card_click_listener);
+        StateMachine.steal_photo_card_click_listener.after = null;
+        document.querySelectorAll(".photo-card.selectable").forEach((c) => {
+            c.classList.remove("selectable");
+        });
+        //document.getElementById("color-grid").classList.add("ACTIVE");
+    }
+
+    static steal_photo_card_click_listener(event) {
+        const cg = event.target.closest("#color-grid");
+        if (!cg) { return; }
+
+        const cardele = event.target.closest(".photo-card");
+        if (cardele && cardele.classList.contains("selectable")) {
+            const c = Card.card_from_ele(cardele);
+
+            c.remove_from_grid();
+            c.flip_up(false);
+            const stolen = GAME_ITEMS['stolen-cards'];
+            stolen.add(c);
+
+            for (const color of COLORS) {
+                var count = 0;
+                for (const card of stolen.cards) {
+                    if (card.color == color) {
+                        count += 1;
+                        if (count >= 3) {
+                            console.log("LOSE");
+                            set_text(`Players lose... ${count} ${color} cards.`, true, null, 0);
+                            return;
+                        }
+                    }
+                }
+            }
+            const after = StateMachine.steal_photo_card_click_listener.after;
+            StateMachine.reset_after_steal_select();
+            if (after) {
+                after();
+            }
+        }
     }
 }
 

@@ -39,9 +39,9 @@ class AdversaryCard extends Card {
         card.setAttribute("effect", this.effect);
         card.setAttribute('face-up', this.face_up );
         card.setAttribute("uid", this.uid);
-        card.textContent = this.col ? `${this.effect}-c${this.col+1}`
-                         : this.row ? `${this.effect}-r${this.row+1}`
-                                    : `${this.effect}`;
+        card.textContent = (this.col !== null) ? `${this.effect}-c${this.col+1}`
+                         : (this.row !== null) ? `${this.effect}-r${this.row+1}`
+                                               : `${this.effect}`;
         this.element_ = card;
         return this.element_;
     }
