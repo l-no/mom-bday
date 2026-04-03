@@ -494,6 +494,7 @@ class StateMachine {
     static reset_power_take_one() { 
         document.removeEventListener("click", StateMachine.take_photo_card_click_listener);
         document.getElementById("color-grid").classList.remove("ACTIVE");
+        document.getElementById("color-grid").classList.remove("ACTIVE-face-up");
     }
 
     static take_photo_card_click_listener(event) {
