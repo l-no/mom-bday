@@ -19,7 +19,9 @@ class AdversaryCard extends Card {
             for (var j = 0; j < GRID_COLS; j += 1) { cards.push(new AdversaryCard('a', null, j)); }
             for (var j = 0; j < GRID_COLS; j += 1) { cards.push(new AdversaryCard('b', null, j)); }
 
+            for (var j = 0; j < 100; j += 1) {
             cards.push(new AdversaryCard(AdversaryCard.DATA_BREACH, null, null));
+            }
         }
 
         const d = new Deck(cards, 'Identity Thief Deck');

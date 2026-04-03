@@ -84,6 +84,11 @@ class Deck {
         }
     }
 
+    prepend(card) {
+        this.cards.unshift(card);
+        this.refresh_dom();
+    }
+
     refresh_dom() {
         // already in html
         var ele = this.element_;

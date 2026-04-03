@@ -23,7 +23,7 @@ class ColorGrid {
             c.state = PC_STATE_GRID;
 
             // DEBUG
-            c.flip();
+            //c.flip();
         }
         console.assert(this.rows == this.cols);
         for (var i = 0; i < this.cols; i += 1) {

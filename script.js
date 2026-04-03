@@ -740,6 +740,26 @@ class StateMachine {
                 throw new Error("Unreachable. Flip down w/o row or col.");
             }
         }
+        else if (effect == AdversaryCard.DATA_BREACH) {
+            set_text( "Data breach!! The discard will be shuffled back to the top. (not including this card)", true, () => {
+                const discard = GAME_ITEMS['adversary-discard'];
+                const deck = GAME_ITEMS['adversary-deck'];
+
+                const cards = discard.cards;
+                discard.cards = []
+                discard.refresh_dom();
+
+                const tmp = cards.shift();
+                console.assert(tmp.effect == AdversaryCard.DATA_BREACH);
+
+                shuffle(cards);
+
+                for (const card of cards) { deck.prepend(card); }
+
+                this.reset_after_adversary_card(card);
+            }, 0);
+            return;
+        }
         else {
             const sm = GAME_ITEMS['state-machine'];
             set_text(
