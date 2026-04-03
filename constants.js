@@ -30,4 +30,6 @@ const NUM_STOCK_CARDS = 5;
 const NUM_STARTING_CARDS = 2;
 const COLOR_SET_SIZE = 4;
 const NUM_DATA_BREACH_CARDS = 5;
-const NUM_EACH_ROW_COL_ADV_CARD = 5;
+// XXX every time one of these is drawn, we should draw an extra adversary card
+// per turn. (or at least have some progression...)?
+const NUM_EACH_ROW_COL_ADV_CARD = 2;

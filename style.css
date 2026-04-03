@@ -71,6 +71,15 @@ body {
 .photo-card.placeholder {
     visibility: hidden;
 }
+#color-grid.can-click-placeholder > .photo-card.placeholder {
+    visibility: visible;
+    background-color: black;
+    border-color: gray;
+    border-style: dashed;
+}
+#color-grid.can-click-placeholder > .photo-card.placeholder:hover {
+    border-color: red;
+}
 
 .photo-card.selectable {
     border: purple;
@@ -98,10 +107,15 @@ body {
 #color-grid.ACTIVE:not(.ACTIVE-face-up) > .photo-card:hover {
     border: green;
     border-style: dashed;
-    background-color: white;
+    /*background-color: white;*/
 }
 
 #color-grid.ACTIVE.ACTIVE-face-up > .photo-card[face-up=true]:hover {
+    border: green;
+    border-style: dashed;
+}
+
+#color-grid.ACTIVE:.ACTIVE-face-down > .photo-card[face-up=false]:hover {
     border: green;
     border-style: dashed;
 }

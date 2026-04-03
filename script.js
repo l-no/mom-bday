@@ -309,11 +309,14 @@ class StateMachine {
         if (cardele) {
             const c = Card.card_from_ele(cardele);
             // XXX logic for Placeholder cards??
+            /*
             if (c.face_up === true) { 
                 console.log("Already face up.");
                 return;
             }
-            c.flip_up();
+            */
+            //c.flip_up();
+            c.flip();
 
             const sm = GAME_ITEMS['state-machine'];
             StateMachine.reset_after_flip_action();
@@ -524,17 +527,17 @@ class StateMachine {
     static power_flip_cross(c) {
         console.log("power_flip_cross", c);
         const cg = ColorGrid.get();
-        var can_do = false;
-
 
         set_text("Select Photo Card. Flip each card touching that card. ", false, null, 1000);
         document.addEventListener("click", StateMachine.flip_cross_click_listener);
         document.getElementById("color-grid").classList.add("ACTIVE");
+        document.getElementById("color-grid").classList.add("ACTIVE-face-down");
     }
 
     static reset_power_flip_cross() { 
         document.removeEventListener("click", StateMachine.flip_cross_click_listener);
         document.getElementById("color-grid").classList.remove("ACTIVE");
+        document.getElementById("color-grid").classList.remove("ACTIVE-face-down");
     }
 
     static flip_cross_click_listener(event) {
@@ -567,6 +570,84 @@ class StateMachine {
 
 
 
+    static power_swap_in_grid(c) {
+        console.log("power_swap_in_grid", c);
+        const cg = ColorGrid.get();
+
+        set_text("Select Photo Card. Swapt its place with another. ", false, null, 1000);
+        document.addEventListener("click", StateMachine.swap_in_grid1);
+        document.getElementById("color-grid").classList.add("ACTIVE");
+        document.getElementById("color-grid").classList.add("ACTIVE-face-down");
+        document.getElementById("color-grid").classList.add("can-click-placeholder");
+    }
+
+    static reset_power_swap_in_grid() { 
+        // only swap_in_grid2 should be there.
+        document.removeEventListener("click", StateMachine.swap_in_grid1);
+        document.removeEventListener("click", StateMachine.swap_in_grid2);
+        document.getElementById("color-grid").classList.remove("ACTIVE");
+        document.getElementById("color-grid").classList.remove("ACTIVE-face-down");
+        document.getElementById("color-grid").classList.remove("can-click-placeholder");
+        StateMachine.swap_in_grid2.card = null;
+    }
+
+    static swap_in_grid1(event) {
+        const cgele = event.target.closest("#color-grid");
+        if (!cgele) { return; }
+
+        const cardele = event.target.closest(".photo-card");
+        console.log(cardele);
+        if (cardele) {
+            cardele.classList.add("selected");
+            document.removeEventListener("click", StateMachine.swap_in_grid1);
+            StateMachine.swap_in_grid2.card = cardele;
+            document.addEventListener("click", StateMachine.swap_in_grid2);
+            set_text("Select card to swap with.", false, null, 1000);
+        }
+    }
+    static swap_in_grid2(event) {
+        const cgele = event.target.closest("#color-grid");
+        if (!cgele) { return; }
+
+        const cardele = event.target.closest(".photo-card");
+        console.log(cardele);
+        if (cardele) {
+            const other = StateMachine.swap_in_grid2.card;
+            console.log("HERE", cardele, other);
+            if (cardele == other) {
+                console.log("Selected same card...");
+                //return;
+            }
+            other.classList.remove("selected");
+
+            const cg = ColorGrid.get();
+
+            const c1 = Card.card_from_ele(other);
+            const c2 = Card.card_from_ele(cardele);
+            const i1 = cg.cards.indexOf(c1);
+            const i2 = cg.cards.indexOf(c2);
+            console.log(i1,i2, cg.cards[i1] == c1, cg.cards[i2] == c2);
+            cg.cards[i2] = c1;
+            cg.cards[i1] = c2;
+            cg.refresh_dom();
+
+            StateMachine.reset_power_swap_in_grid();
+
+            const sm = GAME_ITEMS['state-machine'];
+            sm.dispatch_power_queue();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 
     static do_card_power(card) {
@@ -577,6 +658,9 @@ class StateMachine {
         }
         else if (power === 'B') {
             return StateMachine.power_flip_cross(card);
+        }
+        else if (power === 'C') {
+            return StateMachine.power_swap_in_grid(card);
         }
         else if (true) { // XXX DEBUG XXX
             return StateMachine.power_take_one(card);
