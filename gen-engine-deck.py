@@ -26,17 +26,13 @@ POWERS = [
     'B',
     'C',
     'D',
-    'E',
-    'F',
+    #'E',
+    #'F',
 ]
 
 def gen_random_card():
     r = SystemRandom()
     while True:
-        inout = [r.choice([TOWARDS, AWAY]) for _ in range(4)]
-        power = r.choice(POWERS);
-        colors = [r.choice(COLORS) for _ in range(4)]
-
         '''
         invalid = False
         for i in range(4):
@@ -50,6 +46,11 @@ def gen_random_card():
             continue
         '''
 
+        '''
+        inout = [r.choice([TOWARDS, AWAY]) for _ in range(4)]
+        power = r.choice(POWERS);
+        colors = [r.choice(COLORS) for _ in range(4)]
+
         return ','.join([
             power,
             '<' + inout[0] + colors[0],
@@ -57,6 +58,30 @@ def gen_random_card():
             'v' + inout[2] + colors[2],
             '^' + inout[3] + colors[3],
         ])
+        '''
+
+        directions = list('<>v^')
+        power = r.choice(POWERS)
+        r.shuffle(directions)
+        
+        d1 = directions.pop()
+        d2 = directions.pop()
+        c1 = r.choice(COLORS)
+
+        c2 = r.choice(COLORS)
+        while c1 == c2:
+            c2 = r.choice(COLORS)
+
+        d3 = directions.pop()
+        d4 = directions.pop()
+        return ','.join([
+            power,
+            d1 + TOWARDS + c1,
+            d2 + AWAY + c1,
+            d3 + TOWARDS + c2,
+            d4 + AWAY + c2,
+        ])
+
 
 def gen_random_deck(count):
     deck = [gen_random_card() for _ in range(count)]
