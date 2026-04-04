@@ -162,6 +162,10 @@ body {
     border: green;
     border-style: dashed;
 }
+.engine-hand.ACTIVE > .engine-card.selected {
+    border: red;
+    border-style: dashed;
+}
 .engine-card.selected {
     border: red;
     border-style: dashed;

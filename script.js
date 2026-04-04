@@ -575,7 +575,7 @@ class StateMachine {
         console.log("power_swap_in_grid", c);
         const cg = ColorGrid.get();
 
-        set_text("Select Photo Card. Swapt its place with another. ", false, null, 1000);
+        set_text("Select Photo Card. Swap its place with another. ", false, null, 1000);
         document.addEventListener("click", StateMachine.swap_in_grid1);
         document.getElementById("color-grid").classList.add("ACTIVE");
         document.getElementById("color-grid").classList.add("ACTIVE-face-down");
@@ -643,6 +643,77 @@ class StateMachine {
 
 
 
+    static power_trade(c) {
+        console.log("power_trade", c);
+        const p = get_current_player();
+
+        set_text("Select Photo or Engine card in hand. Swap it with another card in player's hand.", false, null, 1000);
+        document.addEventListener("click", StateMachine.swap_in_hand1);
+        p.area.querySelector(".engine-hand").classList.add("ACTIVE");
+    }
+
+    static reset_power_trade() { 
+        const p = get_current_player();
+        document.removeEventListener("click", StateMachine.swap_in_hand1);
+        document.removeEventListener("click", StateMachine.swap_in_hand2);
+        StateMachine.swap_in_grid2.card = null;
+        p.area.querySelector(".engine-hand").classList.remove("ACTIVE");
+    }
+
+    static swap_in_hand1(event) {
+        console.log("targ", event.target);
+        const pe = event.target.closest(".player-area");
+        if (!pe) { return; }
+
+        let cardele = event.target.closest(".photo-card");
+        if (!cardele) { cardele = event.target.closest(".engine-card");}
+        if (!cardele) {
+            // not a card clicked
+            return;
+        }
+        cardele.classList.add("selected");
+        document.removeEventListener("click", StateMachine.swap_in_hand1);
+        StateMachine.swap_in_grid2.card = cardele;
+        document.addEventListener("click", StateMachine.swap_in_hand2);
+        set_text("Select card to swap with.", false, null, 1000);
+    }
+    static swap_in_hand2(event) {
+        const pe = event.target.closest(".player-area");
+        if (!pe) { return; }
+
+        let cardele = event.target.closest(".photo-card");
+        if (!cardele) { cardele = event.target.closest(".engine-card");}
+        if (!cardele) {
+            // not a card clicked
+            return;
+        }
+
+        const other = StateMachine.swap_in_grid2.card;
+        if (cardele == other) {
+            console.log("Selected same card...");
+            //return;
+        }
+        other.classList.remove("selected");
+
+        const cg = ColorGrid.get();
+
+        const c1 = Card.card_from_ele(other);
+        const c2 = Card.card_from_ele(cardele);
+        const h1 = other.closest(".hand")._object;
+        const h2 = cardele.closest(".hand")._object;
+        const i1 = h1.cards.indexOf(c1);
+        const i2 = h2.cards.indexOf(c2);
+
+        h1.cards[i2] = c1;
+        h2.cards[i1] = c2;
+        h1.refresh_dom();
+        h2.refresh_dom();
+
+        StateMachine.reset_power_trade();
+
+        const sm = GAME_ITEMS['state-machine'];
+        sm.dispatch_power_queue();
+    }
 
 
 
@@ -662,6 +733,9 @@ class StateMachine {
         }
         else if (power === 'C') {
             return StateMachine.power_swap_in_grid(card);
+        }
+        else if (power === 'D') {
+            return StateMachine.power_trade(card);
         }
         else if (true) { // XXX DEBUG XXX
             return StateMachine.power_take_one(card);

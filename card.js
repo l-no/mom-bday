@@ -157,6 +157,7 @@ class Hand {
         }
 
         this.element_ = ele;
+        this.element_._object = this;
         return this.element_;
     }
 }
