@@ -22,7 +22,6 @@ class EngineCard extends Card {
         this.card_down  = null;
     }
 
-
     static default_deck() {
         let cards = [];
         for (const s of DEFAULT_ENGINE_DECK_STRS) {

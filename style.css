@@ -89,6 +89,21 @@ body {
     border: red;
     border-style: dashed;
 }
+.photo-hand.ACTIVE > .photo-card:hover {
+    border: green;
+    border-style: dashed;
+}
+.photo-hand.ACTIVE > .photo-card.selected {
+    border: red;
+    border-style: dashed;
+}
+.photo-hand.ACTIVE > .photo-card {
+    border: magenta;
+}
+.photo-card.selected {
+    border: red;
+    border-style: dashed;
+}
 
 
 #color-grid {

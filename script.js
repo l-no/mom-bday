@@ -649,7 +649,8 @@ class StateMachine {
 
         set_text("Select Photo or Engine card in hand. Swap it with another card in player's hand.", false, null, 1000);
         document.addEventListener("click", StateMachine.swap_in_hand1);
-        p.area.querySelector(".engine-hand").classList.add("ACTIVE");
+        document.querySelectorAll(".engine-hand").forEach((a) => {a.classList.add("ACTIVE");});
+        document.querySelectorAll(".photo-hand").forEach((a) => {a.classList.add("ACTIVE");});
     }
 
     static reset_power_trade() { 
@@ -657,7 +658,8 @@ class StateMachine {
         document.removeEventListener("click", StateMachine.swap_in_hand1);
         document.removeEventListener("click", StateMachine.swap_in_hand2);
         StateMachine.swap_in_grid2.card = null;
-        p.area.querySelector(".engine-hand").classList.remove("ACTIVE");
+        document.querySelectorAll(".engine-hand").forEach((a) => {a.classList.remove("ACTIVE");});
+        document.querySelectorAll(".photo-hand").forEach((a) => {a.classList.remove("ACTIVE");});
     }
 
     static swap_in_hand1(event) {
@@ -695,19 +697,51 @@ class StateMachine {
         }
         other.classList.remove("selected");
 
-        const cg = ColorGrid.get();
-
+        // These cards can be of different types.
         const c1 = Card.card_from_ele(other);
         const c2 = Card.card_from_ele(cardele);
-        const h1 = other.closest(".hand")._object;
-        const h2 = cardele.closest(".hand")._object;
+        const h1ele = other.closest(".hand");
+        const h2ele = cardele.closest(".hand");
+        const h1 = h1ele._object;
+        const h2 = h2ele._object;
         const i1 = h1.cards.indexOf(c1);
         const i2 = h2.cards.indexOf(c2);
+        h1.cards.splice(i1,1);
+        h2.cards.splice(i2,1);
 
-        h1.cards[i2] = c1;
-        h2.cards[i1] = c2;
+        // now put cards in right hand for right player.
+        const p1 = h1ele.closest(".player-area");
+        const p2 = h2ele.closest(".player-area");
+
+        let hh1ele = null;
+        let hh2ele = null;
+
+        if (c1.kind == KIND_Engine) {
+            hh2ele = p2.querySelector(".engine-hand");
+        }
+        else if (c1.kind == KIND_Photo) {
+            hh2ele = p2.querySelector(".photo-hand");
+        }
+        else {
+            throw new Error("Invalid card type.");
+        }
+
+        if (c2.kind == KIND_Engine) {
+            hh1ele = p1.querySelector(".engine-hand");
+        }
+        else if (c2.kind == KIND_Photo) {
+            hh1ele = p1.querySelector(".photo-hand");
+        }
+        else {
+            throw new Error("Invalid card type.");
+        }
+
+        hh2ele._object.cards.push(c1);
+        hh1ele._object.cards.push(c2);
         h1.refresh_dom();
         h2.refresh_dom();
+        hh2ele._object.refresh_dom();
+        hh1ele._object.refresh_dom();
 
         StateMachine.reset_power_trade();
 
@@ -736,9 +770,6 @@ class StateMachine {
         }
         else if (power === 'D') {
             return StateMachine.power_trade(card);
-        }
-        else if (true) { // XXX DEBUG XXX
-            return StateMachine.power_take_one(card);
         }
         else {
             const sm = GAME_ITEMS['state-machine'];
