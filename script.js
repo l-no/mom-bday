@@ -34,6 +34,20 @@ class StateMachine {
 
         this.completed = {};
         for (const color of COLORS) { this.completed[color] = false; }
+
+        this.adversary_cards_per_turn = 1;
+        this.data_breaches = -1; // so that setup will set it to zero;
+    }
+
+    get_adversary_turns() {
+        const table = ADVERSARY_SCALING;
+        console.assert(table.length >= NUM_DATA_BREACH_CARDS);
+        return table[this.data_breaches];
+    }
+    update_adversary_cards_per_turn() {
+        this.data_breaches += 1;
+        this.adversary_cards_per_turn = this.get_adversary_turns()
+        document.getElementById("adversary-draw-count").textContent = `Data Breaches: ${this.data_breaches}. Cards per turn: ${this.adversary_cards_per_turn}.`;
     }
 
     is_game_complete() {
@@ -95,7 +109,8 @@ class StateMachine {
                 draw_engine_card_to_player_hand(i);
             }
         }
-        this.start_player_turn(1)
+        this.update_adversary_cards_per_turn();
+        this.start_player_turn(1);
     }
 
     start_player_turn(i) {
@@ -841,9 +856,19 @@ class StateMachine {
         return queue;
     }
 
-    start_adversary_turn() {
+    start_adversary_turn(first=true) {
         this.state = SADTURN;
         console.log("ADVERSARY TURN");
+
+        if (first) {
+            const turns = this.get_adversary_turns();
+            console.log("Adv turn start:", turns);
+            this.remaining_adversary_plays = this.get_adversary_turns() - 1;
+        }
+        else {
+            console.log("Adv turn rem:", this.remaining_adversary_plays);
+            this.remaining_adversary_plays -= 1;
+        }
 
         set_text(
             "Identity Thief turn. <Enter> to draw a card.",
@@ -991,7 +1016,8 @@ class StateMachine {
             }
         }
         else if (effect == AdversaryCard.DATA_BREACH) {
-            set_text( "Data breach!! The discard will be shuffled back to the top. (not including this card)", true, () => {
+            this.update_adversary_cards_per_turn();
+            set_text( `Data breach!! Cards-per-turn is now ${this.adversary_cards_per_turn}. The discard will be shuffled back to the top. (not including this card)`, true, () => {
                 const discard = GAME_ITEMS['adversary-discard'];
                 const deck = GAME_ITEMS['adversary-deck'];
 
@@ -1032,7 +1058,12 @@ class StateMachine {
 
     reset_after_adversary_card(card) {
         card.element().classList.remove("selected");
-        this.start_next_player_turn();
+        if (this.remaining_adversary_plays == 0) {
+            this.start_next_player_turn();
+        }
+        else {
+            this.start_adversary_turn(false);
+        }
     }
 
     static setup_steal_select(after=null) {

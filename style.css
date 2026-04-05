@@ -105,6 +105,12 @@ body {
     border-style: dashed;
 }
 
+#adversary-draw-count {
+    border: gray;
+    border-style: solid;
+    border-radius: 6px;
+    width: fit-content;
+}
 
 #color-grid {
     border: gray;
@@ -334,6 +340,11 @@ body {
 }
 .adversary-card.selected {
     border: red;
+    border-style: solid;
+    border-radius: 6px;
+}
+#adversary-area {
+    border: gray;
     border-style: solid;
     border-radius: 6px;
 }
